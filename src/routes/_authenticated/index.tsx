@@ -1,32 +1,129 @@
-import { createFileRoute, useRouter } from '@tanstack/react-router'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link, createFileRoute } from '@tanstack/react-router'
+import { useState } from 'react'
 
-import { authClient } from '#/lib/auth-client'
+import { localDateString } from '#/lib/local-date'
+import { getGrid, toggleFood } from '#/server/grid'
 
 export const Route = createFileRoute('/_authenticated/')({
+  ssr: false,
   component: HomePage,
 })
 
+type Grid = Awaited<ReturnType<typeof getGrid>>
+
+function columnsFor(count: number): number {
+  return Math.max(2, Math.ceil(Math.sqrt(count)))
+}
+
 function HomePage() {
-  const router = useRouter()
-  const { user } = Route.useRouteContext()
+  const queryClient = useQueryClient()
+  const [localDate] = useState(() => localDateString())
+  const queryKey = ['grid', localDate]
+
+  const { data } = useQuery({
+    queryKey,
+    queryFn: () => getGrid({ data: { localDate } }),
+  })
+
+  const toggle = useMutation({
+    mutationFn: (foodId: string) => toggleFood({ data: { foodId, localDate } }),
+    onMutate: async (foodId) => {
+      await queryClient.cancelQueries({ queryKey })
+      const previous = queryClient.getQueryData<Grid>(queryKey)
+
+      queryClient.setQueryData<Grid>(queryKey, (current) => {
+        if (!current) return current
+
+        const food = current.foods.find((item) => item.id === foodId)
+        if (!food) return current
+
+        const wasLogged = current.loggedFoodIds.includes(foodId)
+
+        return {
+          ...current,
+          loggedFoodIds: wasLogged
+            ? current.loggedFoodIds.filter((id) => id !== foodId)
+            : [...current.loggedFoodIds, foodId],
+          total: wasLogged
+            ? current.total - food.calories
+            : current.total + food.calories,
+        }
+      })
+
+      return { previous }
+    },
+    onError: (_error, _foodId, context) => {
+      queryClient.setQueryData(queryKey, context?.previous)
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey }),
+  })
+
+  if (!data) {
+    return <div className="h-full" />
+  }
+
+  if (data.foods.length === 0) {
+    return (
+      <main className="flex h-full flex-col items-center justify-center gap-6 px-8">
+        <p className="text-center text-neutral-500">
+          No foods on the grid yet.
+        </p>
+        <Link
+          to="/foods"
+          className="h-14 rounded-2xl bg-neutral-100 px-8 text-lg leading-[3.5rem] font-medium text-neutral-950"
+        >
+          Add food
+        </Link>
+      </main>
+    )
+  }
+
+  const columns = columnsFor(data.foods.length)
 
   return (
-    <main className="flex min-h-full flex-col justify-center gap-6 px-6">
-      <p className="text-center text-neutral-400">
-        Signed in as {user.username ?? user.name}
-      </p>
+    <main className="flex h-full flex-col gap-2 p-2">
+      <header className="flex shrink-0 items-center justify-between px-3 py-1">
+        <span className="text-4xl font-semibold tabular-nums">
+          {data.total}
+        </span>
+        <Link to="/foods" className="p-2 text-sm text-neutral-500">
+          Edit
+        </Link>
+      </header>
 
-      <button
-        type="button"
-        onClick={async () => {
-          await authClient.signOut()
-          await router.invalidate()
-          await router.navigate({ to: '/login', search: { redirect: '/' } })
-        }}
-        className="h-14 rounded-2xl bg-neutral-900 text-lg active:opacity-60"
-      >
-        Sign out
-      </button>
+      <div className="flex min-h-0 flex-1 items-center overflow-y-auto">
+        <div
+          className="grid w-full gap-2"
+          style={{
+            gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+          }}
+        >
+          {data.foods.map((food) => {
+            const logged = data.loggedFoodIds.includes(food.id)
+
+            return (
+              <button
+                key={food.id}
+                type="button"
+                onClick={() => toggle.mutate(food.id)}
+                className={`flex aspect-[2/3] flex-col items-center justify-center gap-1 rounded-3xl p-3 transition-[background-color,color,transform,box-shadow] duration-200 ease-out active:scale-[0.96] ${
+                  logged
+                    ? 'bg-neutral-100 text-neutral-950 shadow-[0_0_40px_-8px_rgba(255,255,255,0.45)]'
+                    : 'bg-neutral-900 text-neutral-500'
+                }`}
+              >
+                <span className="text-center text-lg leading-tight font-medium text-balance">
+                  {food.name}
+                </span>
+                <span className="text-sm tabular-nums opacity-60">
+                  {food.calories}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
     </main>
   )
 }

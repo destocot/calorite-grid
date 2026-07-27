@@ -23,6 +23,7 @@ export default [
       '.tanstack/**',
       'dist/**',
       'migrations/**',
+      'public/**',
     ],
   },
 ]
