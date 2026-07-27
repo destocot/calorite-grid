@@ -5,9 +5,16 @@ import { z } from 'zod'
 import { db } from '#/db'
 import { foods } from '#/db/schema'
 import { authMiddleware } from '#/lib/auth-middleware'
+import { isValidEmoji, normalizeEmoji } from '#/lib/emoji'
 
 const foodInput = z.object({
   name: z.string().trim().min(1).max(40),
+  emoji: z
+    .string()
+    .max(16)
+    .nullable()
+    .transform(normalizeEmoji)
+    .refine(isValidEmoji, 'Must be a single emoji'),
   calories: z.number().int().min(0).max(10000),
   showOnGrid: z.boolean(),
 })
@@ -19,6 +26,7 @@ export const listFoods = createServerFn({ method: 'GET' })
       .select({
         id: foods.id,
         name: foods.name,
+        emoji: foods.emoji,
         calories: foods.calories,
         showOnGrid: foods.showOnGrid,
       })

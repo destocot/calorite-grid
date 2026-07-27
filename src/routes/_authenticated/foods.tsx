@@ -22,6 +22,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 
+import { EmojiPicker } from '#/components/emoji-picker'
 import {
   createFood,
   deleteFood,
@@ -42,11 +43,17 @@ type Food = Awaited<ReturnType<typeof listFoods>>[number]
 const fieldClass =
   'h-12 rounded-xl bg-neutral-900 px-4 outline-none placeholder:text-neutral-600 focus:ring-2 focus:ring-neutral-600'
 
+interface FoodValues {
+  name: string
+  emoji: string | null
+  calories: number
+}
+
 interface FoodRowProps {
   food: Food
   onToggle: () => void
   onDelete: () => void
-  onSave: (values: { name: string; calories: number }) => void
+  onSave: (values: FoodValues) => void
 }
 
 function FoodRow({ food, onToggle, onDelete, onSave }: FoodRowProps) {
@@ -60,11 +67,14 @@ function FoodRow({ food, onToggle, onDelete, onSave }: FoodRowProps) {
   } = useSortable({ id: food.id })
 
   const [editing, setEditing] = useState(false)
+  const [picking, setPicking] = useState(false)
   const [name, setName] = useState(food.name)
+  const [emoji, setEmoji] = useState(food.emoji)
   const [calories, setCalories] = useState(String(food.calories))
 
   function startEditing() {
     setName(food.name)
+    setEmoji(food.emoji)
     setCalories(String(food.calories))
     setEditing(true)
   }
@@ -73,7 +83,7 @@ function FoodRow({ food, onToggle, onDelete, onSave }: FoodRowProps) {
     const parsed = Number(calories)
     if (!name.trim() || !Number.isFinite(parsed)) return
 
-    onSave({ name: name.trim(), calories: Math.round(parsed) })
+    onSave({ name: name.trim(), emoji, calories: Math.round(parsed) })
     setEditing(false)
   }
 
@@ -84,6 +94,14 @@ function FoodRow({ food, onToggle, onDelete, onSave }: FoodRowProps) {
         style={{ transform: CSS.Transform.toString(transform), transition }}
         className="flex items-center gap-2 rounded-xl bg-neutral-800 p-3"
       >
+        <button
+          type="button"
+          aria-label="Choose emoji"
+          onClick={() => setPicking(true)}
+          className="size-10 shrink-0 rounded-lg bg-neutral-900 text-xl"
+        >
+          {emoji ?? '+'}
+        </button>
         <input
           value={name}
           onChange={(event) => setName(event.target.value)}
@@ -96,13 +114,13 @@ function FoodRow({ food, onToggle, onDelete, onSave }: FoodRowProps) {
           onChange={(event) => setCalories(event.target.value)}
           inputMode="numeric"
           pattern="[0-9]*"
-          className="h-10 w-16 rounded-lg bg-neutral-900 px-2 text-center tabular-nums outline-none"
+          className="h-10 w-14 rounded-lg bg-neutral-900 px-2 text-center tabular-nums outline-none"
         />
         <button
           type="button"
           aria-label="Save"
           onClick={save}
-          className="px-2 text-neutral-100"
+          className="px-1 text-neutral-100"
         >
           &#10003;
         </button>
@@ -110,10 +128,18 @@ function FoodRow({ food, onToggle, onDelete, onSave }: FoodRowProps) {
           type="button"
           aria-label="Cancel"
           onClick={() => setEditing(false)}
-          className="px-2 text-neutral-500"
+          className="px-1 text-neutral-500"
         >
           &times;
         </button>
+
+        {picking && (
+          <EmojiPicker
+            value={emoji}
+            onChange={setEmoji}
+            onClose={() => setPicking(false)}
+          />
+        )}
       </li>
     )
   }
@@ -148,8 +174,9 @@ function FoodRow({ food, onToggle, onDelete, onSave }: FoodRowProps) {
       <button
         type="button"
         onClick={startEditing}
-        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+        className="flex min-w-0 flex-1 items-center gap-2 text-left"
       >
+        {food.emoji && <span className="text-lg">{food.emoji}</span>}
         <span className="min-w-0 flex-1 truncate">{food.name}</span>
         <span className="tabular-nums text-neutral-500">{food.calories}</span>
       </button>
@@ -178,7 +205,7 @@ function FoodsPage() {
   }
 
   const create = useMutation({
-    mutationFn: (input: { name: string; calories: number }) =>
+    mutationFn: (input: FoodValues) =>
       createFood({ data: { ...input, showOnGrid: true } }),
     onSuccess: invalidate,
   })
@@ -208,7 +235,9 @@ function FoodsPage() {
   )
 
   const [name, setName] = useState('')
+  const [emoji, setEmoji] = useState<string | null>(null)
   const [calories, setCalories] = useState('')
+  const [picking, setPicking] = useState(false)
 
   function handleCreate(event: FormEvent) {
     event.preventDefault()
@@ -216,8 +245,9 @@ function FoodsPage() {
     const parsed = Number(calories)
     if (!name.trim() || !Number.isFinite(parsed)) return
 
-    create.mutate({ name: name.trim(), calories: Math.round(parsed) })
+    create.mutate({ name: name.trim(), emoji, calories: Math.round(parsed) })
     setName('')
+    setEmoji(null)
     setCalories('')
   }
 
@@ -246,14 +276,24 @@ function FoodsPage() {
       </header>
 
       <form onSubmit={handleCreate} className="flex flex-col gap-3">
-        <input
-          placeholder="food"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          maxLength={40}
-          required
-          className={fieldClass}
-        />
+        <div className="flex gap-3">
+          <button
+            type="button"
+            aria-label="Choose emoji"
+            onClick={() => setPicking(true)}
+            className="size-12 shrink-0 rounded-xl bg-neutral-900 text-xl text-neutral-600"
+          >
+            {emoji ?? '+'}
+          </button>
+          <input
+            placeholder="food"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            maxLength={40}
+            required
+            className={`${fieldClass} min-w-0 flex-1`}
+          />
+        </div>
         <input
           placeholder="calories"
           value={calories}
@@ -270,6 +310,14 @@ function FoodsPage() {
           Add
         </button>
       </form>
+
+      {picking && (
+        <EmojiPicker
+          value={emoji}
+          onChange={setEmoji}
+          onClose={() => setPicking(false)}
+        />
+      )}
 
       <DndContext
         sensors={sensors}

@@ -8,6 +8,7 @@ import { authMiddleware } from '#/lib/auth-middleware'
 interface DayItem {
   id: string
   name: string
+  emoji: string | null
   calories: number
 }
 
@@ -25,6 +26,7 @@ export const getHistory = createServerFn({ method: 'GET' })
         id: entries.id,
         localDate: entries.localDate,
         foodName: entries.foodName,
+        foodEmoji: entries.foodEmoji,
         calories: entries.calories,
       })
       .from(entries)
@@ -41,7 +43,12 @@ export const getHistory = createServerFn({ method: 'GET' })
       }
 
       day.total += row.calories
-      day.items.push({ id: row.id, name: row.foodName, calories: row.calories })
+      day.items.push({
+        id: row.id,
+        name: row.foodName,
+        emoji: row.foodEmoji,
+        calories: row.calories,
+      })
       days.set(row.localDate, day)
     }
 

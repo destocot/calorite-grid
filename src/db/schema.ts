@@ -86,6 +86,7 @@ export const foods = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
+    emoji: text('emoji'),
     calories: integer('calories').notNull(),
     showOnGrid: boolean('show_on_grid').default(true).notNull(),
     sortOrder: integer('sort_order').default(0).notNull(),
@@ -105,6 +106,7 @@ export const entries = pgTable(
     }),
     localDate: date('local_date', { mode: 'string' }).notNull(),
     foodName: text('food_name').notNull(),
+    foodEmoji: text('food_emoji'),
     calories: integer('calories').notNull(),
   },
   (table) => [

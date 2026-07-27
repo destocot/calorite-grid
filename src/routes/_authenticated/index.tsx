@@ -127,6 +127,9 @@ function HomePage() {
                     : 'bg-neutral-900 text-neutral-500'
                 }`}
               >
+                {food.emoji && (
+                  <span className="text-3xl leading-none">{food.emoji}</span>
+                )}
                 <span className="text-center text-lg leading-tight font-medium text-balance">
                   {food.name}
                 </span>

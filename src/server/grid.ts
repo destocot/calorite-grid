@@ -17,6 +17,7 @@ export const getGrid = createServerFn({ method: 'GET' })
         .select({
           id: foods.id,
           name: foods.name,
+          emoji: foods.emoji,
           calories: foods.calories,
         })
         .from(foods)
@@ -47,7 +48,11 @@ export const toggleFood = createServerFn({ method: 'POST' })
   .validator(z.object({ foodId: z.uuid(), localDate }))
   .handler(async ({ data, context }) => {
     const [food] = await db
-      .select({ name: foods.name, calories: foods.calories })
+      .select({
+        name: foods.name,
+        emoji: foods.emoji,
+        calories: foods.calories,
+      })
       .from(foods)
       .where(and(eq(foods.id, data.foodId), eq(foods.userId, context.user.id)))
 
@@ -75,6 +80,7 @@ export const toggleFood = createServerFn({ method: 'POST' })
       foodId: data.foodId,
       localDate: data.localDate,
       foodName: food.name,
+      foodEmoji: food.emoji,
       calories: food.calories,
     })
 
