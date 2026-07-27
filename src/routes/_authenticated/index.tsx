@@ -63,84 +63,96 @@ function HomePage() {
     return <div className="h-full" />
   }
 
-  if (data.foods.length === 0) {
-    return (
-      <main className="flex h-full flex-col items-center justify-center gap-6 px-8">
-        <p className="text-center text-neutral-500">
-          No foods on the grid yet.
-        </p>
-        <Link
-          to="/foods"
-          className="h-14 rounded-2xl bg-neutral-100 px-8 text-lg leading-[3.5rem] font-medium text-neutral-950"
-        >
-          Add food
-        </Link>
-      </main>
-    )
-  }
-
   const columns = columnsFor(data.foods.length)
 
   return (
-    <main className="flex h-full flex-col gap-2 p-2">
-      <header className="flex shrink-0 items-start justify-between px-3 py-1">
-        <div className="flex flex-col">
-          <span className="text-4xl leading-none font-semibold tabular-nums">
-            {data.total}
+    <main className="flex h-full flex-col px-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
+      <header className="shrink-0">
+        <p className="eyebrow">Calories today</p>
+        <div className="rule mt-2 flex items-end justify-between pt-2">
+          <span className="numeral text-[3.25rem] leading-[0.95] font-extrabold tracking-[-0.03em]">
+            {data.total.toLocaleString()}
           </span>
-          <span className="mt-1 text-xs text-neutral-500">
+          <span className="text-muted pb-1 text-xs">
             {formatLocalDate(localDate)}
           </span>
         </div>
-
-        <nav className="flex items-center gap-1 text-xs text-neutral-500">
-          <Link to="/history" className="p-2">
-            History
-          </Link>
-          <Link to="/foods" className="p-2">
-            Foods
-          </Link>
-          <Link to="/settings" className="p-2">
-            Settings
-          </Link>
-        </nav>
+        <div className="rule mt-2" />
       </header>
 
-      <div className="flex min-h-0 flex-1 items-center overflow-y-auto">
-        <div
-          className="grid w-full gap-2"
-          style={{
-            gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
-          }}
-        >
-          {data.foods.map((food) => {
-            const logged = data.loggedFoodIds.includes(food.id)
-
-            return (
-              <button
-                key={food.id}
-                type="button"
-                onClick={() => toggle.mutate(food.id)}
-                className={`flex aspect-[2/3] flex-col items-center justify-center gap-1 rounded-3xl p-3 transition-[background-color,color,transform,box-shadow] duration-200 ease-out active:scale-[0.96] ${
-                  logged
-                    ? 'bg-neutral-100 text-neutral-950 shadow-[0_0_40px_-8px_rgba(255,255,255,0.45)]'
-                    : 'bg-neutral-900 text-neutral-500'
-                }`}
-              >
-                {food.emoji && (
-                  <span className="text-3xl leading-none">{food.emoji}</span>
-                )}
-                <span className="text-center text-lg leading-tight font-medium text-balance">
-                  {food.name}
-                </span>
-                <span className="text-sm tabular-nums opacity-60">
-                  {food.calories}
-                </span>
-              </button>
-            )
-          })}
+      {data.foods.length === 0 ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-5">
+          <p className="text-muted text-center text-sm">
+            Nothing on the grid yet.
+          </p>
+          <Link
+            to="/foods"
+            className="btn btn-primary grid place-items-center px-7"
+          >
+            Add your first food
+          </Link>
         </div>
-      </div>
+      ) : (
+        <div className="flex min-h-0 flex-1 items-center overflow-y-auto py-4">
+          <div
+            className="grid w-full gap-3"
+            style={{
+              gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+            }}
+          >
+            {data.foods.map((food) => {
+              const logged = data.loggedFoodIds.includes(food.id)
+
+              return (
+                <button
+                  key={food.id}
+                  type="button"
+                  aria-pressed={logged}
+                  onClick={() => toggle.mutate(food.id)}
+                  style={{ borderRadius: 'var(--radius-card)' }}
+                  className={`flex aspect-[2/3] flex-col items-center justify-center gap-1.5 p-3 transition-[background-color,color,transform,box-shadow] duration-200 active:scale-[0.95] ${
+                    logged
+                      ? 'bg-paper text-canvas shadow-[inset_0_0_0_1px_rgba(11,11,12,0.12)]'
+                      : 'bg-surface text-muted shadow-[inset_0_0_0_1px_var(--color-line)]'
+                  }`}
+                >
+                  {food.emoji && (
+                    <span
+                      className={`text-[1.75rem] leading-none transition-opacity duration-200 ${
+                        logged ? 'opacity-100' : 'opacity-45'
+                      }`}
+                    >
+                      {food.emoji}
+                    </span>
+                  )}
+                  <span
+                    className={`text-center text-[0.9375rem] leading-tight font-semibold text-balance ${
+                      logged ? '' : 'text-ink/70'
+                    }`}
+                  >
+                    {food.name}
+                  </span>
+                  <span className="numeral text-xs opacity-55">
+                    {food.calories}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      <nav className="rule flex shrink-0 items-center justify-around pt-2">
+        <Link to="/history" className="nav-link">
+          History
+        </Link>
+        <Link to="/foods" className="nav-link">
+          Foods
+        </Link>
+        <Link to="/settings" className="nav-link">
+          Settings
+        </Link>
+      </nav>
     </main>
   )
 }

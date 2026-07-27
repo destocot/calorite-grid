@@ -40,8 +40,7 @@ export const Route = createFileRoute('/_authenticated/foods')({
 
 type Food = Awaited<ReturnType<typeof listFoods>>[number]
 
-const fieldClass =
-  'h-12 rounded-xl bg-neutral-900 px-4 outline-none placeholder:text-neutral-600 focus:ring-2 focus:ring-neutral-600'
+const fieldClass = 'control'
 
 interface FoodValues {
   name: string
@@ -92,13 +91,13 @@ function FoodRow({ food, onToggle, onDelete, onSave }: FoodRowProps) {
       <li
         ref={setNodeRef}
         style={{ transform: CSS.Transform.toString(transform), transition }}
-        className="flex items-center gap-2 rounded-xl bg-neutral-800 p-3"
+        className="bg-raised flex items-center gap-2 rounded-[var(--radius-panel)] p-2.5"
       >
         <button
           type="button"
           aria-label="Choose emoji"
           onClick={() => setPicking(true)}
-          className="size-10 shrink-0 rounded-lg bg-neutral-900 text-xl"
+          className="bg-surface text-faint size-10 shrink-0 rounded-[10px] text-xl"
         >
           {emoji ?? '+'}
         </button>
@@ -107,20 +106,20 @@ function FoodRow({ food, onToggle, onDelete, onSave }: FoodRowProps) {
           onChange={(event) => setName(event.target.value)}
           maxLength={40}
           autoFocus
-          className="h-10 min-w-0 flex-1 rounded-lg bg-neutral-900 px-3 outline-none"
+          className="bg-surface h-10 min-w-0 flex-1 rounded-[10px] px-3 outline-none"
         />
         <input
           value={calories}
           onChange={(event) => setCalories(event.target.value)}
           inputMode="numeric"
           pattern="[0-9]*"
-          className="h-10 w-14 rounded-lg bg-neutral-900 px-2 text-center tabular-nums outline-none"
+          className="numeral bg-surface h-10 w-14 rounded-[10px] px-2 text-center outline-none"
         />
         <button
           type="button"
           aria-label="Save"
           onClick={save}
-          className="px-1 text-neutral-100"
+          className="text-paper px-1.5 text-lg"
         >
           &#10003;
         </button>
@@ -128,7 +127,7 @@ function FoodRow({ food, onToggle, onDelete, onSave }: FoodRowProps) {
           type="button"
           aria-label="Cancel"
           onClick={() => setEditing(false)}
-          className="px-1 text-neutral-500"
+          className="text-faint px-1.5 text-lg"
         >
           &times;
         </button>
@@ -148,8 +147,8 @@ function FoodRow({ food, onToggle, onDelete, onSave }: FoodRowProps) {
     <li
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`flex touch-none items-center gap-3 rounded-xl bg-neutral-900 p-3 ${
-        isDragging ? 'z-10 opacity-80 shadow-lg' : ''
+      className={`panel flex touch-none items-center gap-3 p-3 transition-shadow ${
+        isDragging ? 'z-10 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.8)]' : ''
       }`}
       {...attributes}
       {...listeners}
@@ -160,13 +159,13 @@ function FoodRow({ food, onToggle, onDelete, onSave }: FoodRowProps) {
         aria-checked={food.showOnGrid}
         aria-label={`Show ${food.name} on grid`}
         onClick={onToggle}
-        className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${
-          food.showOnGrid ? 'bg-neutral-100' : 'bg-neutral-700'
+        className={`relative h-6 w-10 shrink-0 rounded-full transition-colors duration-200 ${
+          food.showOnGrid ? 'bg-paper' : 'bg-line'
         }`}
       >
         <span
-          className={`absolute top-1 size-4 rounded-full transition-all ${
-            food.showOnGrid ? 'left-5 bg-neutral-950' : 'left-1 bg-neutral-400'
+          className={`absolute top-1 size-4 rounded-full transition-all duration-200 ${
+            food.showOnGrid ? 'left-5 bg-canvas' : 'left-1 bg-faint'
           }`}
         />
       </button>
@@ -178,14 +177,14 @@ function FoodRow({ food, onToggle, onDelete, onSave }: FoodRowProps) {
       >
         {food.emoji && <span className="text-lg">{food.emoji}</span>}
         <span className="min-w-0 flex-1 truncate">{food.name}</span>
-        <span className="tabular-nums text-neutral-500">{food.calories}</span>
+        <span className="numeral text-muted text-sm">{food.calories}</span>
       </button>
 
       <button
         type="button"
         aria-label={`Delete ${food.name}`}
         onClick={onDelete}
-        className="p-2 text-neutral-600"
+        className="text-faint hover:text-ember px-1 py-2 text-lg transition-colors"
       >
         &times;
       </button>
@@ -265,28 +264,26 @@ function FoodsPage() {
   }
 
   return (
-    <main className="flex min-h-full flex-col gap-6 p-4">
-      <header className="flex items-center justify-between">
-        <Link to="/" className="p-2 text-sm text-neutral-500">
+    <main className="flex min-h-full flex-col px-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+      <header className="mb-5 flex shrink-0 items-center justify-between">
+        <Link to="/" className="nav-link -ml-2">
           Back
         </Link>
-        <Link to="/history" className="p-2 text-sm text-neutral-500">
-          History
-        </Link>
+        <p className="eyebrow">Foods</p>
       </header>
 
-      <form onSubmit={handleCreate} className="flex flex-col gap-3">
-        <div className="flex gap-3">
+      <form onSubmit={handleCreate} className="mb-6 flex flex-col gap-2.5">
+        <div className="flex gap-2.5">
           <button
             type="button"
             aria-label="Choose emoji"
             onClick={() => setPicking(true)}
-            className="size-12 shrink-0 rounded-xl bg-neutral-900 text-xl text-neutral-600"
+            className="bg-raised text-faint size-12 shrink-0 rounded-[var(--radius-control)] text-xl"
           >
             {emoji ?? '+'}
           </button>
           <input
-            placeholder="food"
+            placeholder="Food name"
             value={name}
             onChange={(event) => setName(event.target.value)}
             maxLength={40}
@@ -295,19 +292,16 @@ function FoodsPage() {
           />
         </div>
         <input
-          placeholder="calories"
+          placeholder="Calories"
           value={calories}
           onChange={(event) => setCalories(event.target.value)}
           inputMode="numeric"
           pattern="[0-9]*"
           required
-          className={fieldClass}
+          className={`${fieldClass} numeral`}
         />
-        <button
-          type="submit"
-          className="h-12 rounded-xl bg-neutral-100 font-medium text-neutral-950 active:opacity-60"
-        >
-          Add
+        <button type="submit" className="btn btn-primary">
+          Add food
         </button>
       </form>
 

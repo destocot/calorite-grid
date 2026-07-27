@@ -17,45 +17,48 @@ function HistoryPage() {
   })
 
   return (
-    <main className="flex min-h-full flex-col gap-6 p-4">
-      <header className="flex items-center justify-between">
-        <Link to="/" className="p-2 text-sm text-neutral-500">
+    <main className="flex min-h-full flex-col px-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+      <header className="mb-5 flex shrink-0 items-center justify-between">
+        <Link to="/" className="nav-link -ml-2">
           Back
         </Link>
-        <span className="p-2 text-sm text-neutral-500">History</span>
+        <p className="eyebrow">History</p>
       </header>
 
       {days?.length === 0 && (
-        <p className="mt-8 text-center text-neutral-600">Nothing logged yet.</p>
+        <p className="text-faint mt-16 text-center text-sm">
+          Nothing logged yet.
+        </p>
       )}
 
       <div className="flex flex-col gap-3">
         {days?.map((day) => (
-          <section
-            key={day.localDate}
-            className="overflow-hidden rounded-2xl bg-neutral-900"
-          >
-            <div className="flex items-baseline justify-between border-b border-neutral-800 px-4 py-3">
-              <h2 className="text-sm text-neutral-400">
+          <section key={day.localDate} className="panel overflow-hidden">
+            <div className="flex items-end justify-between px-4 pt-3 pb-2">
+              <h2 className="eyebrow">
                 {day.localDate === today
                   ? 'Today'
-                  : formatLocalDate(day.localDate)}
+                  : formatLocalDate(day.localDate, {
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric',
+                    })}
               </h2>
-              <span className="text-xl font-semibold tabular-nums">
-                {day.total}
+              <span className="numeral text-2xl leading-none font-bold tracking-[-0.02em]">
+                {day.total.toLocaleString()}
               </span>
             </div>
 
-            <ul className="py-1">
+            <ul className="rule mx-4 py-2">
               {day.items.map((item) => (
-                <li key={item.id} className="flex items-center gap-2 px-4 py-1">
-                  {item.emoji && (
-                    <span className="text-base">{item.emoji}</span>
-                  )}
-                  <span className="min-w-0 flex-1 truncate text-sm">
+                <li key={item.id} className="flex items-center gap-2.5 py-1">
+                  <span className="w-5 text-center text-base">
+                    {item.emoji ?? ''}
+                  </span>
+                  <span className="text-ink/85 min-w-0 flex-1 truncate text-sm">
                     {item.name}
                   </span>
-                  <span className="text-sm tabular-nums text-neutral-500">
+                  <span className="numeral text-muted text-sm">
                     {item.calories}
                   </span>
                 </li>

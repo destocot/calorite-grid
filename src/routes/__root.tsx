@@ -23,7 +23,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         content:
           'width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover',
       },
-      { name: 'theme-color', content: '#0a0a0a' },
+      { name: 'theme-color', content: '#0b0b0c' },
       { name: 'mobile-web-app-capable', content: 'yes' },
       { name: 'apple-mobile-web-app-capable', content: 'yes' },
       {
@@ -50,7 +50,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body className="h-full bg-neutral-950 text-neutral-100 antialiased select-none">
+      <body className="h-full select-none">
         <div className="mx-auto h-full w-full max-w-sm">{children}</div>
         <ServiceWorker />
         <Scripts />

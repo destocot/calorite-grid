@@ -58,9 +58,12 @@ function LoginPage() {
 
   return (
     <main className="flex min-h-full flex-col justify-center px-6 py-12">
-      <h1 className="mb-10 text-center text-3xl font-semibold tracking-tight">
-        Calorie Grid
-      </h1>
+      <div className="mb-10 text-center">
+        <p className="eyebrow">Calorie Grid</p>
+        <h1 className="mt-2 text-3xl font-extrabold tracking-[-0.03em]">
+          Sign in
+        </h1>
+      </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <input
@@ -72,7 +75,7 @@ function LoginPage() {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           required
-          className="h-14 rounded-2xl bg-neutral-900 px-5 text-lg outline-none placeholder:text-neutral-600 focus:ring-2 focus:ring-neutral-600"
+          className="control h-14 rounded-[var(--radius-panel)] text-lg"
         />
 
         <input
@@ -84,11 +87,11 @@ function LoginPage() {
           onChange={(e) => setPassword(e.target.value)}
           required
           minLength={6}
-          className="h-14 rounded-2xl bg-neutral-900 px-5 text-lg outline-none placeholder:text-neutral-600 focus:ring-2 focus:ring-neutral-600"
+          className="control h-14 rounded-[var(--radius-panel)] text-lg"
         />
 
         {error && (
-          <p role="alert" className="text-sm text-red-400">
+          <p role="alert" className="text-ember text-sm">
             {error}
           </p>
         )}
@@ -96,13 +99,13 @@ function LoginPage() {
         <button
           type="submit"
           disabled={pending}
-          className="h-14 rounded-2xl bg-neutral-100 text-lg font-medium text-neutral-950 transition-opacity active:opacity-60 disabled:opacity-40"
+          className="btn btn-primary h-14 text-lg"
         >
           Sign in
         </button>
       </form>
 
-      <Link to="/signup" className="mt-8 text-center text-sm text-neutral-500">
+      <Link to="/signup" className="nav-link mt-8 text-center">
         Create an account
       </Link>
     </main>

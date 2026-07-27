@@ -17,24 +17,22 @@ function SettingsPage() {
   }
 
   return (
-    <main className="flex min-h-full flex-col gap-6 p-4">
-      <header className="flex items-center justify-between">
-        <Link to="/" className="p-2 text-sm text-neutral-500">
+    <main className="flex min-h-full flex-col px-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+      <header className="mb-5 flex shrink-0 items-center justify-between">
+        <Link to="/" className="nav-link -ml-2">
           Back
         </Link>
-        <span className="p-2 text-sm text-neutral-500">Settings</span>
+        <p className="eyebrow">Settings</p>
       </header>
 
-      <div className="flex items-center justify-between rounded-xl bg-neutral-900 px-4 py-3">
-        <span className="text-sm text-neutral-500">Signed in as</span>
-        <span className="truncate">{user.username ?? user.name}</span>
+      <div className="panel mb-3 flex items-center justify-between px-4 py-3.5">
+        <span className="eyebrow">Account</span>
+        <span className="truncate text-sm font-medium">
+          {user.username ?? user.name}
+        </span>
       </div>
 
-      <button
-        type="button"
-        onClick={signOut}
-        className="h-12 rounded-xl bg-neutral-900 text-red-400 active:opacity-60"
-      >
+      <button type="button" onClick={signOut} className="btn btn-danger">
         Sign out
       </button>
     </main>
