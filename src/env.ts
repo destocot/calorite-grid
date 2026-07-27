@@ -1,7 +1,6 @@
 import { createEnv } from '@t3-oss/env-core'
 import { z } from 'zod'
 
-// Server-only. Do not import this module from client components.
 export const env = createEnv({
   server: {
     DATABASE_URL: z.url(),

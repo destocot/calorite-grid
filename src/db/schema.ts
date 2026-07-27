@@ -22,10 +22,6 @@ const base = {
     .notNull(),
 }
 
-/* -------------------------------------------------------------------------- */
-/*                                 better-auth                                */
-/* -------------------------------------------------------------------------- */
-
 export const users = pgTable('users', {
   ...base,
   name: text('name').notNull(),
@@ -82,10 +78,6 @@ export const verifications = pgTable(
   (table) => [index('verifications_identifier_idx').on(table.identifier)],
 )
 
-/* -------------------------------------------------------------------------- */
-/*                                    app                                     */
-/* -------------------------------------------------------------------------- */
-
 export const foods = pgTable(
   'foods',
   {
@@ -111,9 +103,7 @@ export const entries = pgTable(
     foodId: uuid('food_id')
       .notNull()
       .references(() => foods.id, { onDelete: 'cascade' }),
-    // Local calendar day in the user's timezone, not derived from createdAt.
     localDate: date('local_date', { mode: 'string' }).notNull(),
-    // Snapshot so editing a food's calories never rewrites logged days.
     calories: integer('calories').notNull(),
   },
   (table) => [
@@ -125,10 +115,6 @@ export const entries = pgTable(
     index('entries_userId_localDate_idx').on(table.userId, table.localDate),
   ],
 )
-
-/* -------------------------------------------------------------------------- */
-/*                                  relations                                 */
-/* -------------------------------------------------------------------------- */
 
 export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
