@@ -32,7 +32,6 @@ If you prefer not to use Tailwind CSS:
 
 ## Linting & Formatting
 
-
 This project uses [eslint](https://eslint.org/) and [prettier](https://prettier.io/) for linting and formatting. Eslint is configured using [tanstack/eslint-config](https://tanstack.com/config/latest/docs/eslint). The following scripts are available:
 
 ```bash
@@ -40,7 +39,6 @@ pnpm lint
 pnpm format
 pnpm check
 ```
-
 
 ## Deploy with Nitro
 
@@ -54,7 +52,6 @@ node dist/server/index.mjs
 The build output is a self-contained Node server. To deploy, push the `dist/` directory to your host (Render, Fly.io, your own VPS, etc.) and run the server command above.
 
 For host-specific presets (Vercel, Netlify, Cloudflare, AWS Lambda, etc.) and tuning, see https://v3.nitro.build/deploy.
-
 
 ## Setting up Better Auth
 
@@ -72,15 +69,15 @@ Better Auth can work in stateless mode, but to persist user data, add a database
 
 ```typescript
 // src/lib/auth.ts
-import { betterAuth } from "better-auth";
-import { Pool } from "pg";
+import { betterAuth } from 'better-auth'
+import { Pool } from 'pg'
 
 export const auth = betterAuth({
   database: new Pool({
     connectionString: process.env.DATABASE_URL,
   }),
   // ... rest of config
-});
+})
 ```
 
 Then run migrations:
@@ -88,7 +85,6 @@ Then run migrations:
 ```bash
 pnpm dlx @better-auth/cli migrate
 ```
-
 
 ## Setting up Neon
 
@@ -99,7 +95,6 @@ It is the same process as [Neon Launchpad](https://neon.new).
 > [!IMPORTANT]  
 > Claimable databases expire in 72 hours.
 
-
 ## T3Env
 
 - You can use T3Env to add type safety to your environment variables.
@@ -109,15 +104,10 @@ It is the same process as [Neon Launchpad](https://neon.new).
 ### Usage
 
 ```ts
-import { env } from "#/env";
+import { env } from '#/env'
 
-console.log(env.VITE_APP_TITLE);
+console.log(env.VITE_APP_TITLE)
 ```
-
-
-
-
-
 
 ## Routing
 
@@ -136,7 +126,7 @@ Now that you have two routes you can use a `Link` component to navigate between 
 To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
 
 ```tsx
-import { Link } from "@tanstack/react-router";
+import { Link } from '@tanstack/react-router'
 ```
 
 Then anywhere in your JSX you can use it like so:
@@ -204,11 +194,11 @@ const getServerTime = createServerFn({
 // Use in a component
 function MyComponent() {
   const [time, setTime] = useState('')
-  
+
   useEffect(() => {
     getServerTime().then(setTime)
   }, [])
-  
+
   return <div>Server time: {time}</div>
 }
 ```
@@ -260,8 +250,6 @@ function PeopleComponent() {
 ```
 
 Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-
 
 # Learn More
 
