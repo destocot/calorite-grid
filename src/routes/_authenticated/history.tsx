@@ -29,11 +29,14 @@ function HistoryPage() {
         <p className="mt-8 text-center text-neutral-600">Nothing logged yet.</p>
       )}
 
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-3">
         {days?.map((day) => (
-          <section key={day.localDate} className="flex flex-col gap-2">
-            <div className="flex items-baseline justify-between">
-              <h2 className="text-sm text-neutral-500">
+          <section
+            key={day.localDate}
+            className="overflow-hidden rounded-2xl bg-neutral-900"
+          >
+            <div className="flex items-baseline justify-between border-b border-neutral-800 px-4 py-3">
+              <h2 className="text-sm text-neutral-400">
                 {day.localDate === today
                   ? 'Today'
                   : formatLocalDate(day.localDate)}
@@ -43,12 +46,9 @@ function HistoryPage() {
               </span>
             </div>
 
-            <ul className="flex flex-col gap-px overflow-hidden rounded-xl">
+            <ul className="py-1">
               {day.items.map((item) => (
-                <li
-                  key={item.id}
-                  className="flex items-center gap-3 bg-neutral-900 px-3 py-2"
-                >
+                <li key={item.id} className="flex items-center gap-2 px-4 py-1">
                   {item.emoji && (
                     <span className="text-base">{item.emoji}</span>
                   )}
