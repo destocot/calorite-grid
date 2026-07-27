@@ -19,10 +19,9 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link, createFileRoute, useRouter } from '@tanstack/react-router'
+import { Link, createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 
-import { authClient } from '#/lib/auth-client'
 import {
   createFood,
   deleteFood,
@@ -43,15 +42,14 @@ type Food = Awaited<ReturnType<typeof listFoods>>[number]
 const fieldClass =
   'h-12 rounded-xl bg-neutral-900 px-4 outline-none placeholder:text-neutral-600 focus:ring-2 focus:ring-neutral-600'
 
-function FoodRow({
-  food,
-  onToggle,
-  onDelete,
-}: {
+interface FoodRowProps {
   food: Food
   onToggle: () => void
   onDelete: () => void
-}) {
+  onSave: (values: { name: string; calories: number }) => void
+}
+
+function FoodRow({ food, onToggle, onDelete, onSave }: FoodRowProps) {
   const {
     attributes,
     listeners,
@@ -60,6 +58,65 @@ function FoodRow({
     transition,
     isDragging,
   } = useSortable({ id: food.id })
+
+  const [editing, setEditing] = useState(false)
+  const [name, setName] = useState(food.name)
+  const [calories, setCalories] = useState(String(food.calories))
+
+  function startEditing() {
+    setName(food.name)
+    setCalories(String(food.calories))
+    setEditing(true)
+  }
+
+  function save() {
+    const parsed = Number(calories)
+    if (!name.trim() || !Number.isFinite(parsed)) return
+
+    onSave({ name: name.trim(), calories: Math.round(parsed) })
+    setEditing(false)
+  }
+
+  if (editing) {
+    return (
+      <li
+        ref={setNodeRef}
+        style={{ transform: CSS.Transform.toString(transform), transition }}
+        className="flex items-center gap-2 rounded-xl bg-neutral-800 p-3"
+      >
+        <input
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          maxLength={40}
+          autoFocus
+          className="h-10 min-w-0 flex-1 rounded-lg bg-neutral-900 px-3 outline-none"
+        />
+        <input
+          value={calories}
+          onChange={(event) => setCalories(event.target.value)}
+          inputMode="numeric"
+          pattern="[0-9]*"
+          className="h-10 w-16 rounded-lg bg-neutral-900 px-2 text-center tabular-nums outline-none"
+        />
+        <button
+          type="button"
+          aria-label="Save"
+          onClick={save}
+          className="px-2 text-neutral-100"
+        >
+          &#10003;
+        </button>
+        <button
+          type="button"
+          aria-label="Cancel"
+          onClick={() => setEditing(false)}
+          className="px-2 text-neutral-500"
+        >
+          &times;
+        </button>
+      </li>
+    )
+  }
 
   return (
     <li
@@ -73,15 +130,29 @@ function FoodRow({
     >
       <button
         type="button"
-        aria-label={food.showOnGrid ? 'Remove from grid' : 'Show on grid'}
+        role="switch"
+        aria-checked={food.showOnGrid}
+        aria-label={`Show ${food.name} on grid`}
         onClick={onToggle}
-        className={`size-6 shrink-0 rounded-full transition-colors ${
+        className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${
           food.showOnGrid ? 'bg-neutral-100' : 'bg-neutral-700'
         }`}
-      />
+      >
+        <span
+          className={`absolute top-1 size-4 rounded-full transition-all ${
+            food.showOnGrid ? 'left-5 bg-neutral-950' : 'left-1 bg-neutral-400'
+          }`}
+        />
+      </button>
 
-      <span className="min-w-0 flex-1 truncate">{food.name}</span>
-      <span className="tabular-nums text-neutral-500">{food.calories}</span>
+      <button
+        type="button"
+        onClick={startEditing}
+        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+      >
+        <span className="min-w-0 flex-1 truncate">{food.name}</span>
+        <span className="tabular-nums text-neutral-500">{food.calories}</span>
+      </button>
 
       <button
         type="button"
@@ -96,7 +167,6 @@ function FoodRow({
 }
 
 function FoodsPage() {
-  const router = useRouter()
   const queryClient = useQueryClient()
   const queryKey = ['foods']
 
@@ -170,17 +240,9 @@ function FoodsPage() {
         <Link to="/" className="p-2 text-sm text-neutral-500">
           Back
         </Link>
-        <button
-          type="button"
-          onClick={async () => {
-            await authClient.signOut()
-            await router.invalidate()
-            await router.navigate({ to: '/login', search: { redirect: '/' } })
-          }}
-          className="p-2 text-sm text-neutral-500"
-        >
-          Sign out
-        </button>
+        <Link to="/history" className="p-2 text-sm text-neutral-500">
+          History
+        </Link>
       </header>
 
       <form onSubmit={handleCreate} className="flex flex-col gap-3">
@@ -227,6 +289,7 @@ function FoodsPage() {
                 onToggle={() =>
                   update.mutate({ ...food, showOnGrid: !food.showOnGrid })
                 }
+                onSave={(values) => update.mutate({ ...food, ...values })}
                 onDelete={() => remove.mutate(food.id)}
               />
             ))}

@@ -5,3 +5,30 @@ export function localDateString(date = new Date()): string {
 
   return `${year}-${month}-${day}`
 }
+
+// new Date('2026-07-27') parses as UTC midnight, which lands on the previous
+// day for anyone behind it. Build the date from parts instead.
+export function parseLocalDate(value: string): Date {
+  const [year, month, day] = value.split('-').map(Number)
+
+  if (year === undefined || month === undefined || day === undefined) {
+    return new Date(Number.NaN)
+  }
+
+  return new Date(year, month - 1, day)
+}
+
+export function formatLocalDate(
+  value: string,
+  options: Intl.DateTimeFormatOptions = {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  },
+): string {
+  const date = parseLocalDate(value)
+
+  return Number.isNaN(date.getTime())
+    ? value
+    : date.toLocaleDateString(undefined, options)
+}

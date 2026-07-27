@@ -100,10 +100,11 @@ export const entries = pgTable(
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    foodId: uuid('food_id')
-      .notNull()
-      .references(() => foods.id, { onDelete: 'cascade' }),
+    foodId: uuid('food_id').references(() => foods.id, {
+      onDelete: 'set null',
+    }),
     localDate: date('local_date', { mode: 'string' }).notNull(),
+    foodName: text('food_name').notNull(),
     calories: integer('calories').notNull(),
   },
   (table) => [

@@ -18,7 +18,7 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     autoSignIn: true,
-    disableSignUp: true,
+    disableSignUp: false,
     minPasswordLength: 6,
   },
   plugins: [username(), tanstackStartCookies()],

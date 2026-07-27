@@ -10,28 +10,20 @@ import { authClient } from '#/lib/auth-client'
 
 import type { FormEvent } from 'react'
 
-function sanitizeRedirect(url: unknown): string {
-  if (typeof url !== 'string' || !url.startsWith('/') || url.startsWith('//')) {
-    return '/'
-  }
-  return url
-}
-
-export const Route = createFileRoute('/login')({
-  validateSearch: (search) => ({
-    redirect: sanitizeRedirect(search.redirect),
-  }),
-  beforeLoad: ({ context, search }) => {
+export const Route = createFileRoute('/signup')({
+  beforeLoad: ({ context }) => {
     if (context.session) {
-      throw redirect({ to: search.redirect })
+      throw redirect({ to: '/' })
     }
   },
-  component: LoginPage,
+  component: SignUpPage,
 })
 
-function LoginPage() {
+const fieldClass =
+  'h-14 rounded-2xl bg-neutral-900 px-5 text-lg outline-none placeholder:text-neutral-600 focus:ring-2 focus:ring-neutral-600'
+
+function SignUpPage() {
   const router = useRouter()
-  const search = Route.useSearch()
 
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -43,7 +35,12 @@ function LoginPage() {
     setError('')
     setPending(true)
 
-    const result = await authClient.signIn.username({ username, password })
+    const result = await authClient.signUp.email({
+      email: `${username}@calorie.local`,
+      name: username,
+      username,
+      password,
+    })
 
     setPending(false)
 
@@ -53,7 +50,7 @@ function LoginPage() {
     }
 
     await router.invalidate()
-    await router.navigate({ to: search.redirect })
+    await router.navigate({ to: '/' })
   }
 
   return (
@@ -70,21 +67,23 @@ function LoginPage() {
           autoComplete="username"
           placeholder="username"
           value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          onChange={(event) => setUsername(event.target.value)}
           required
-          className="h-14 rounded-2xl bg-neutral-900 px-5 text-lg outline-none placeholder:text-neutral-600 focus:ring-2 focus:ring-neutral-600"
+          minLength={3}
+          maxLength={30}
+          className={fieldClass}
         />
 
         <input
           name="password"
           type="password"
-          autoComplete="current-password"
+          autoComplete="new-password"
           placeholder="password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(event) => setPassword(event.target.value)}
           required
           minLength={6}
-          className="h-14 rounded-2xl bg-neutral-900 px-5 text-lg outline-none placeholder:text-neutral-600 focus:ring-2 focus:ring-neutral-600"
+          className={fieldClass}
         />
 
         {error && (
@@ -98,12 +97,16 @@ function LoginPage() {
           disabled={pending}
           className="h-14 rounded-2xl bg-neutral-100 text-lg font-medium text-neutral-950 transition-opacity active:opacity-60 disabled:opacity-40"
         >
-          Sign in
+          Create account
         </button>
       </form>
 
-      <Link to="/signup" className="mt-8 text-center text-sm text-neutral-500">
-        Create an account
+      <Link
+        to="/login"
+        search={{ redirect: '/' }}
+        className="mt-8 text-center text-sm text-neutral-500"
+      >
+        I already have an account
       </Link>
     </main>
   )

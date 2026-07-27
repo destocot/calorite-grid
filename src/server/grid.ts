@@ -47,7 +47,7 @@ export const toggleFood = createServerFn({ method: 'POST' })
   .validator(z.object({ foodId: z.uuid(), localDate }))
   .handler(async ({ data, context }) => {
     const [food] = await db
-      .select({ calories: foods.calories })
+      .select({ name: foods.name, calories: foods.calories })
       .from(foods)
       .where(and(eq(foods.id, data.foodId), eq(foods.userId, context.user.id)))
 
@@ -74,6 +74,7 @@ export const toggleFood = createServerFn({ method: 'POST' })
       userId: context.user.id,
       foodId: data.foodId,
       localDate: data.localDate,
+      foodName: food.name,
       calories: food.calories,
     })
 
