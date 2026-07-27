@@ -58,6 +58,22 @@ export const updateFood = createServerFn({ method: 'POST' })
     return updated[0]
   })
 
+export const reorderFoods = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware])
+  .validator(z.object({ ids: z.array(z.uuid()).min(1).max(200) }))
+  .handler(async ({ data, context }) => {
+    await db.transaction(async (tx) => {
+      for (const [index, id] of data.ids.entries()) {
+        await tx
+          .update(foods)
+          .set({ sortOrder: index })
+          .where(and(eq(foods.id, id), eq(foods.userId, context.user.id)))
+      }
+    })
+
+    return { ok: true }
+  })
+
 export const deleteFood = createServerFn({ method: 'POST' })
   .middleware([authMiddleware])
   .validator(z.object({ id: z.uuid() }))
