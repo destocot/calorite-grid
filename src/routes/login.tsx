@@ -28,7 +28,6 @@ function LoginPage() {
   const router = useRouter()
   const search = Route.useSearch()
 
-  const [mode, setMode] = useState<'signIn' | 'signUp'>('signIn')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -39,15 +38,7 @@ function LoginPage() {
     setError('')
     setPending(true)
 
-    const result =
-      mode === 'signIn'
-        ? await authClient.signIn.username({ username, password })
-        : await authClient.signUp.email({
-            email: `${username}@calorie.local`,
-            name: username,
-            username,
-            password,
-          })
+    const result = await authClient.signIn.username({ username, password })
 
     setPending(false)
 
@@ -82,7 +73,7 @@ function LoginPage() {
         <input
           name="password"
           type="password"
-          autoComplete={mode === 'signIn' ? 'current-password' : 'new-password'}
+          autoComplete="current-password"
           placeholder="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -102,20 +93,9 @@ function LoginPage() {
           disabled={pending}
           className="h-14 rounded-2xl bg-neutral-100 text-lg font-medium text-neutral-950 transition-opacity active:opacity-60 disabled:opacity-40"
         >
-          {mode === 'signIn' ? 'Sign in' : 'Create account'}
+          Sign in
         </button>
       </form>
-
-      <button
-        type="button"
-        onClick={() => {
-          setMode(mode === 'signIn' ? 'signUp' : 'signIn')
-          setError('')
-        }}
-        className="mt-8 text-sm text-neutral-500"
-      >
-        {mode === 'signIn' ? 'Create an account' : 'I already have an account'}
-      </button>
     </main>
   )
 }
