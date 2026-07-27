@@ -20,7 +20,6 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^1.0.2",
     "@t3-oss/env-core": "^0.13.10",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-devtools": "latest",
@@ -38,7 +37,6 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "tailwindcss": "^4.1.18",
-    "vite-plugin-neon-new": "^0.8.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -56,11 +54,5 @@
     "tsx": "^4.21.0",
     "typescript": "^6.0.2",
     "vite": "^8.0.0"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild",
-      "lightningcss"
-    ]
   }
 }
