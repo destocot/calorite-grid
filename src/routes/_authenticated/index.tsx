@@ -99,7 +99,7 @@ const HomePage = () => {
           </Link>
         </div>
       ) : (
-        <div className="flex min-h-0 flex-1 overflow-x-hidden overflow-y-auto py-4">
+        <div className="no-scrollbar flex min-h-0 flex-1 overflow-x-hidden overflow-y-auto py-4">
           <div
             className={`m-auto grid w-full ${dense ? 'gap-2.5' : 'gap-3'}`}
             style={{

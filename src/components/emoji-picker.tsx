@@ -33,7 +33,7 @@ export const EmojiPicker = ({
           </button>
         </div>
 
-        <div className="rule grid max-h-72 grid-cols-8 gap-1 overflow-x-hidden overflow-y-auto pt-3">
+        <div className="no-scrollbar rule grid max-h-72 grid-cols-8 gap-1 overflow-x-hidden overflow-y-auto pt-3">
           {FOOD_EMOJI.map((emoji) => (
             <button
               key={emoji}

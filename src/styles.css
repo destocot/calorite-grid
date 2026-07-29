@@ -127,6 +127,14 @@
     transform: none;
   }
 
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
   .animate-stamp {
     animation: stamp 340ms var(--ease-punch);
   }
