@@ -13,7 +13,7 @@ export const Route = createFileRoute('/_authenticated/')({
 type Grid = Awaited<ReturnType<typeof getGrid>>
 
 function columnsFor(count: number): number {
-  return Math.max(2, Math.ceil(Math.sqrt(count)))
+  return Math.min(3, Math.max(2, Math.ceil(Math.sqrt(count))))
 }
 
 function HomePage() {
@@ -64,6 +64,7 @@ function HomePage() {
   }
 
   const columns = columnsFor(data.foods.length)
+  const dense = columns > 2
 
   return (
     <main className="flex h-full flex-col px-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
@@ -93,9 +94,9 @@ function HomePage() {
           </Link>
         </div>
       ) : (
-        <div className="flex min-h-0 flex-1 items-center overflow-y-auto py-4">
+        <div className="flex min-h-0 flex-1 overflow-y-auto py-4">
           <div
-            className="grid w-full gap-3"
+            className={`m-auto grid w-full ${dense ? 'gap-2.5' : 'gap-3'}`}
             style={{
               gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
             }}
@@ -110,29 +111,33 @@ function HomePage() {
                   aria-pressed={logged}
                   onClick={() => toggle.mutate(food.id)}
                   style={{ borderRadius: 'var(--radius-card)' }}
-                  className={`flex aspect-[2/3] flex-col items-center justify-center gap-1.5 p-3 transition-[background-color,color,transform,box-shadow] duration-200 active:scale-[0.95] ${
+                  className={`ease-punch flex aspect-2/3 flex-col items-center justify-between overflow-hidden p-2.5 transition-[background-color,color,box-shadow,transform] duration-200 active:scale-[0.95] ${
                     logged
-                      ? 'bg-paper text-canvas shadow-[inset_0_0_0_1px_rgba(11,11,12,0.12)]'
-                      : 'bg-surface text-muted shadow-[inset_0_0_0_1px_var(--color-line)]'
+                      ? 'bg-paper text-canvas shadow-[inset_0_0_0_1px_rgba(11,11,12,0.14),0_6px_20px_-8px_rgba(240,234,221,0.45)]'
+                      : 'bg-raised text-muted shadow-[inset_0_0_0_1px_var(--color-line)]'
                   }`}
                 >
-                  {food.emoji && (
+                  <span className="flex min-h-0 flex-1 flex-col items-center justify-center gap-1.5">
+                    {food.emoji && (
+                      <span
+                        className={`${dense ? 'text-[1.625rem]' : 'text-[2.25rem]'} leading-none transition-[filter,opacity] duration-200 ${
+                          logged
+                            ? 'opacity-100 grayscale-0'
+                            : 'opacity-80 grayscale'
+                        }`}
+                      >
+                        {food.emoji}
+                      </span>
+                    )}
                     <span
-                      className={`text-[1.75rem] leading-none transition-opacity duration-200 ${
-                        logged ? 'opacity-100' : 'opacity-45'
-                      }`}
+                      className={`line-clamp-3 text-center leading-[1.15] font-semibold wrap-break-word hyphens-auto ${
+                        dense ? 'text-[0.8125rem]' : 'text-[1.0625rem]'
+                      } ${logged ? '' : 'text-ink/75'}`}
                     >
-                      {food.emoji}
+                      {food.name}
                     </span>
-                  )}
-                  <span
-                    className={`text-center text-[0.9375rem] leading-tight font-semibold text-balance ${
-                      logged ? '' : 'text-ink/70'
-                    }`}
-                  >
-                    {food.name}
                   </span>
-                  <span className="numeral text-xs opacity-55">
+                  <span className="numeral shrink-0 text-[0.6875rem] font-medium tracking-wide opacity-60">
                     {food.calories}
                   </span>
                 </button>
