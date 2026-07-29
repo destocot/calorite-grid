@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-export function ServiceWorker() {
+export const ServiceWorker = () => {
   useEffect(() => {
     if (!import.meta.env.PROD || !('serviceWorker' in navigator)) return
 

@@ -10,26 +10,14 @@ import { authClient } from '#/lib/auth-client'
 
 import type { FormEvent } from 'react'
 
-function sanitizeRedirect(url: unknown): string {
+const sanitizeRedirect = (url: unknown): string => {
   if (typeof url !== 'string' || !url.startsWith('/') || url.startsWith('//')) {
     return '/'
   }
   return url
 }
 
-export const Route = createFileRoute('/login')({
-  validateSearch: (search) => ({
-    redirect: sanitizeRedirect(search.redirect),
-  }),
-  beforeLoad: ({ context, search }) => {
-    if (context.session) {
-      throw redirect({ to: search.redirect })
-    }
-  },
-  component: LoginPage,
-})
-
-function LoginPage() {
+export const LoginPage = () => {
   const router = useRouter()
   const search = Route.useSearch()
 
@@ -38,7 +26,7 @@ function LoginPage() {
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
 
-  async function handleSubmit(event: FormEvent) {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
     setError('')
     setPending(true)
@@ -111,3 +99,15 @@ function LoginPage() {
     </main>
   )
 }
+
+export const Route = createFileRoute('/login')({
+  validateSearch: (search) => ({
+    redirect: sanitizeRedirect(search.redirect),
+  }),
+  beforeLoad: ({ context, search }) => {
+    if (context.session) {
+      throw redirect({ to: search.redirect })
+    }
+  },
+  component: LoginPage,
+})

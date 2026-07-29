@@ -141,12 +141,11 @@ const segmenter =
 
 // A single emoji can be many code points (skin tones, ZWJ sequences), so
 // length checks are useless here — count grapheme clusters instead.
-export function countGraphemes(value: string): number {
+export const countGraphemes = (value: string): number => {
   if (!segmenter) return [...value].length
 
   return [...segmenter.segment(value)].length
 }
 
-export function isValidEmoji(value: string): boolean {
-  return countGraphemes(value) === 1 && !/^[\w\s]$/.test(value)
-}
+export const isValidEmoji = (value: string): boolean =>
+  countGraphemes(value) === 1 && !/^[\w\s]$/.test(value)

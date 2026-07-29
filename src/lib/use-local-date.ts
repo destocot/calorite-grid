@@ -4,7 +4,7 @@ import { localDateString } from './local-date'
 
 // An installed PWA is resumed, not reloaded, so the day has to be re-read
 // rather than captured once on mount.
-export function useLocalDate(): string {
+export const useLocalDate = (): string => {
   const [localDate, setLocalDate] = useState(localDateString)
 
   useEffect(() => {

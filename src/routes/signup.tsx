@@ -10,18 +10,9 @@ import { authClient } from '#/lib/auth-client'
 
 import type { FormEvent } from 'react'
 
-export const Route = createFileRoute('/signup')({
-  beforeLoad: ({ context }) => {
-    if (context.session) {
-      throw redirect({ to: '/' })
-    }
-  },
-  component: SignUpPage,
-})
-
 const fieldClass = 'control h-14 rounded-[var(--radius-panel)] text-lg'
 
-function SignUpPage() {
+export const SignUpPage = () => {
   const router = useRouter()
 
   const [username, setUsername] = useState('')
@@ -29,7 +20,7 @@ function SignUpPage() {
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
 
-  async function handleSubmit(event: FormEvent) {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
     setError('')
     setPending(true)
@@ -113,3 +104,12 @@ function SignUpPage() {
     </main>
   )
 }
+
+export const Route = createFileRoute('/signup')({
+  beforeLoad: ({ context }) => {
+    if (context.session) {
+      throw redirect({ to: '/' })
+    }
+  },
+  component: SignUpPage,
+})

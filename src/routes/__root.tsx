@@ -51,7 +51,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body className="h-full select-none">
-        <div className="mx-auto h-full w-full max-w-sm">{children}</div>
+        <div className="max-w-app mx-auto h-full w-full">{children}</div>
         <ServiceWorker />
         <Scripts />
       </body>

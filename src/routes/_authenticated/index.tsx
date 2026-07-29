@@ -6,18 +6,12 @@ import { formatLocalDate } from '#/lib/local-date'
 import { useLocalDate } from '#/lib/use-local-date'
 import { getGrid, toggleFood } from '#/server/grid'
 
-export const Route = createFileRoute('/_authenticated/')({
-  ssr: false,
-  component: HomePage,
-})
-
 type Grid = Awaited<ReturnType<typeof getGrid>>
 
-function columnsFor(count: number): number {
-  return Math.min(3, Math.max(2, Math.ceil(Math.sqrt(count))))
-}
+const columnsFor = (count: number): number =>
+  Math.min(3, Math.max(2, Math.ceil(Math.sqrt(count))))
 
-function buzz() {
+const buzz = () => {
   try {
     navigator.vibrate(12)
   } catch {
@@ -25,7 +19,7 @@ function buzz() {
   }
 }
 
-function HomePage() {
+export const HomePage = () => {
   const queryClient = useQueryClient()
   const localDate = useLocalDate()
   const queryKey = ['grid', localDate]
@@ -142,7 +136,9 @@ function HomePage() {
                       className={`${dense ? 'text-[1.625rem]' : 'text-[2.25rem]'} leading-none transition-[filter,opacity] duration-200 ${
                         stamped === food.id ? 'animate-pop' : ''
                       } ${
-                        logged ? 'opacity-100 grayscale-0' : 'opacity-80 grayscale'
+                        logged
+                          ? 'opacity-100 grayscale-0'
+                          : 'opacity-80 grayscale'
                       }`}
                     >
                       {food.emoji}
@@ -180,7 +176,7 @@ function HomePage() {
   )
 }
 
-function GridSkeleton({ localDate }: Readonly<{ localDate: string }>) {
+const GridSkeleton = ({ localDate }: Readonly<{ localDate: string }>) => {
   return (
     <main className="flex h-full flex-col px-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
       <header className="shrink-0">
@@ -221,3 +217,8 @@ function GridSkeleton({ localDate }: Readonly<{ localDate: string }>) {
     </main>
   )
 }
+
+export const Route = createFileRoute('/_authenticated/')({
+  ssr: false,
+  component: HomePage,
+})

@@ -34,10 +34,6 @@ import {
 import type { DragEndEvent } from '@dnd-kit/core'
 import type { SubmitEvent } from 'react'
 
-export const Route = createFileRoute('/_authenticated/foods')({
-  component: FoodsPage,
-})
-
 type Food = Awaited<ReturnType<typeof listFoods>>[number]
 
 const fieldClass = 'control'
@@ -55,7 +51,12 @@ interface FoodRowProps {
   onSave: (values: FoodValues) => void
 }
 
-function FoodRow({ food, onToggle, onDelete, onSave }: Readonly<FoodRowProps>) {
+const FoodRow = ({
+  food,
+  onToggle,
+  onDelete,
+  onSave,
+}: Readonly<FoodRowProps>) => {
   const {
     attributes,
     listeners,
@@ -71,14 +72,14 @@ function FoodRow({ food, onToggle, onDelete, onSave }: Readonly<FoodRowProps>) {
   const [emoji, setEmoji] = useState(food.emoji)
   const [calories, setCalories] = useState(String(food.calories))
 
-  function startEditing() {
+  const startEditing = () => {
     setName(food.name)
     setEmoji(food.emoji)
     setCalories(String(food.calories))
     setEditing(true)
   }
 
-  function save() {
+  const save = () => {
     const parsed = Number(calories)
     if (!name.trim() || !Number.isFinite(parsed)) return
 
@@ -192,7 +193,7 @@ function FoodRow({ food, onToggle, onDelete, onSave }: Readonly<FoodRowProps>) {
   )
 }
 
-function FoodsPage() {
+export const FoodsPage = () => {
   const queryClient = useQueryClient()
   const queryKey = ['foods']
 
@@ -238,7 +239,7 @@ function FoodsPage() {
   const [calories, setCalories] = useState('')
   const [picking, setPicking] = useState(false)
 
-  function handleCreate(event: SubmitEvent) {
+  const handleCreate = (event: SubmitEvent) => {
     event.preventDefault()
 
     const parsed = Number(calories)
@@ -250,7 +251,7 @@ function FoodsPage() {
     setCalories('')
   }
 
-  function handleDragEnd(event: DragEndEvent) {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     if (!over || active.id === over.id || !foods) return
 
@@ -345,3 +346,7 @@ function FoodsPage() {
     </main>
   )
 }
+
+export const Route = createFileRoute('/_authenticated/foods')({
+  component: FoodsPage,
+})

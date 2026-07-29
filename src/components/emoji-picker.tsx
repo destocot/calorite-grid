@@ -6,8 +6,12 @@ interface EmojiPickerProps {
   onClose: () => void
 }
 
-export function EmojiPicker({ value, onChange, onClose }: EmojiPickerProps) {
-  function choose(emoji: string) {
+export const EmojiPicker = ({
+  value,
+  onChange,
+  onClose,
+}: Readonly<EmojiPickerProps>) => {
+  const choose = (emoji: string) => {
     onChange(emoji)
     onClose()
   }
@@ -21,7 +25,7 @@ export function EmojiPicker({ value, onChange, onClose }: EmojiPickerProps) {
         className="bg-canvas/70 flex-1 backdrop-blur-[2px]"
       />
 
-      <div className="bg-surface mx-auto flex w-full max-w-sm flex-col gap-3 rounded-t-[var(--radius-card)] p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+      <div className="bg-surface max-w-app mx-auto flex w-full flex-col gap-3 rounded-t-(--radius-card) p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
         <div className="flex items-center justify-between">
           <span className="eyebrow">Pick an emoji</span>
           <button type="button" onClick={onClose} className="nav-link -mr-2">

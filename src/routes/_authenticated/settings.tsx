@@ -2,15 +2,11 @@ import { Link, createFileRoute, useRouter } from '@tanstack/react-router'
 
 import { authClient } from '#/lib/auth-client'
 
-export const Route = createFileRoute('/_authenticated/settings')({
-  component: SettingsPage,
-})
-
-function SettingsPage() {
+export const SettingsPage = () => {
   const router = useRouter()
   const { user } = Route.useRouteContext()
 
-  async function signOut() {
+  const signOut = async () => {
     await authClient.signOut()
     await router.invalidate()
     await router.navigate({ to: '/login', search: { redirect: '/' } })
@@ -38,3 +34,7 @@ function SettingsPage() {
     </main>
   )
 }
+
+export const Route = createFileRoute('/_authenticated/settings')({
+  component: SettingsPage,
+})
