@@ -8,7 +8,7 @@ import { useState } from 'react'
 
 import { authClient } from '#/lib/auth-client'
 
-import type { FormEvent } from 'react'
+import type { SubmitEvent } from 'react'
 
 const sanitizeRedirect = (url: unknown): string => {
   if (typeof url !== 'string' || !url.startsWith('/') || url.startsWith('//')) {
@@ -26,7 +26,7 @@ export const LoginPage = () => {
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
 
-  const handleSubmit = async (event: FormEvent) => {
+  const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError('')
     setPending(true)
@@ -63,7 +63,7 @@ export const LoginPage = () => {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           required
-          className="control h-14 rounded-[var(--radius-panel)] text-lg"
+          className="control h-14 rounded-(--radius-panel) text-lg"
         />
 
         <input
@@ -75,7 +75,7 @@ export const LoginPage = () => {
           onChange={(e) => setPassword(e.target.value)}
           required
           minLength={6}
-          className="control h-14 rounded-[var(--radius-panel)] text-lg"
+          className="control h-14 rounded-(--radius-panel) text-lg"
         />
 
         {error && (
