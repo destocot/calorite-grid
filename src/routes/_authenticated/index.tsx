@@ -19,7 +19,7 @@ const buzz = () => {
   }
 }
 
-export const HomePage = () => {
+const HomePage = () => {
   const queryClient = useQueryClient()
   const localDate = useLocalDate()
   const queryKey = ['grid', localDate]
@@ -99,7 +99,7 @@ export const HomePage = () => {
           </Link>
         </div>
       ) : (
-        <div className="flex min-h-0 flex-1 overflow-y-auto py-4">
+        <div className="flex min-h-0 flex-1 overflow-x-hidden overflow-y-auto py-4">
           <div
             className={`m-auto grid w-full ${dense ? 'gap-2.5' : 'gap-3'}`}
             style={{

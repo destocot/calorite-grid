@@ -12,7 +12,7 @@ import type { FormEvent } from 'react'
 
 const fieldClass = 'control h-14 rounded-[var(--radius-panel)] text-lg'
 
-export const SignUpPage = () => {
+const SignUpPage = () => {
   const router = useRouter()
 
   const [username, setUsername] = useState('')

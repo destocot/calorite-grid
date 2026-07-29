@@ -17,7 +17,7 @@ const sanitizeRedirect = (url: unknown): string => {
   return url
 }
 
-export const LoginPage = () => {
+const LoginPage = () => {
   const router = useRouter()
   const search = Route.useSearch()
 

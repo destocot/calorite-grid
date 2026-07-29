@@ -4,7 +4,7 @@ import { Link, createFileRoute } from '@tanstack/react-router'
 import { formatLocalDate, localDateString } from '#/lib/local-date'
 import { getHistory } from '#/server/history'
 
-export const HistoryPage = () => {
+const HistoryPage = () => {
   const today = localDateString()
   const { data: days } = useQuery({
     queryKey: ['history'],

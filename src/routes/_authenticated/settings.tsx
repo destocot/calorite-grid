@@ -2,7 +2,7 @@ import { Link, createFileRoute, useRouter } from '@tanstack/react-router'
 
 import { authClient } from '#/lib/auth-client'
 
-export const SettingsPage = () => {
+const SettingsPage = () => {
   const router = useRouter()
   const { user } = Route.useRouteContext()
 

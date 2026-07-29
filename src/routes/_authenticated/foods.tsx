@@ -193,7 +193,7 @@ const FoodRow = ({
   )
 }
 
-export const FoodsPage = () => {
+const FoodsPage = () => {
   const queryClient = useQueryClient()
   const queryKey = ['foods']
 
