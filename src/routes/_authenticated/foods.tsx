@@ -51,7 +51,12 @@ interface FoodCardProps {
   onSave: (values: FoodValues) => void
 }
 
-const FoodCard = ({ food, onToggle, onDelete, onSave }: Readonly<FoodCardProps>) => {
+const FoodCard = ({
+  food,
+  onToggle,
+  onDelete,
+  onSave,
+}: Readonly<FoodCardProps>) => {
   const [editing, setEditing] = useState(false)
   const [picking, setPicking] = useState(false)
   const [confirming, setConfirming] = useState(false)
