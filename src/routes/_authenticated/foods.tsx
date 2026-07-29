@@ -32,7 +32,7 @@ import {
 } from '#/server/foods'
 
 import type { DragEndEvent } from '@dnd-kit/core'
-import type { FormEvent } from 'react'
+import type { SubmitEvent } from 'react'
 
 export const Route = createFileRoute('/_authenticated/foods')({
   component: FoodsPage,
@@ -44,7 +44,7 @@ const fieldClass = 'control'
 
 interface FoodValues {
   name: string
-  emoji: string | null
+  emoji: string
   calories: number
 }
 
@@ -55,7 +55,7 @@ interface FoodRowProps {
   onSave: (values: FoodValues) => void
 }
 
-function FoodRow({ food, onToggle, onDelete, onSave }: FoodRowProps) {
+function FoodRow({ food, onToggle, onDelete, onSave }: Readonly<FoodRowProps>) {
   const {
     attributes,
     listeners,
@@ -91,15 +91,15 @@ function FoodRow({ food, onToggle, onDelete, onSave }: FoodRowProps) {
       <li
         ref={setNodeRef}
         style={{ transform: CSS.Transform.toString(transform), transition }}
-        className="bg-raised flex items-center gap-2 rounded-[var(--radius-panel)] p-2.5"
+        className="bg-raised flex items-center gap-2 rounded-(--radius-panel) p-2.5"
       >
         <button
           type="button"
           aria-label="Choose emoji"
           onClick={() => setPicking(true)}
-          className="bg-surface text-faint size-10 shrink-0 rounded-[10px] text-xl"
+          className="bg-surface size-10 shrink-0 rounded-[10px] text-xl"
         >
-          {emoji ?? '+'}
+          {emoji}
         </button>
         <input
           value={name}
@@ -175,7 +175,7 @@ function FoodRow({ food, onToggle, onDelete, onSave }: FoodRowProps) {
         onClick={startEditing}
         className="flex min-w-0 flex-1 items-center gap-2 text-left"
       >
-        {food.emoji && <span className="text-lg">{food.emoji}</span>}
+        <span className="text-lg">{food.emoji}</span>
         <span className="min-w-0 flex-1 truncate">{food.name}</span>
         <span className="numeral text-muted text-sm">{food.calories}</span>
       </button>
@@ -199,8 +199,8 @@ function FoodsPage() {
   const { data: foods } = useQuery({ queryKey, queryFn: () => listFoods() })
 
   const invalidate = () => {
-    void queryClient.invalidateQueries({ queryKey })
-    void queryClient.invalidateQueries({ queryKey: ['grid'] })
+    queryClient.invalidateQueries({ queryKey })
+    queryClient.invalidateQueries({ queryKey: ['grid'] })
   }
 
   const create = useMutation({
@@ -238,11 +238,11 @@ function FoodsPage() {
   const [calories, setCalories] = useState('')
   const [picking, setPicking] = useState(false)
 
-  function handleCreate(event: FormEvent) {
+  function handleCreate(event: SubmitEvent) {
     event.preventDefault()
 
     const parsed = Number(calories)
-    if (!name.trim() || !Number.isFinite(parsed)) return
+    if (!name.trim() || !emoji || !Number.isFinite(parsed)) return
 
     create.mutate({ name: name.trim(), emoji, calories: Math.round(parsed) })
     setName('')
@@ -278,7 +278,11 @@ function FoodsPage() {
             type="button"
             aria-label="Choose emoji"
             onClick={() => setPicking(true)}
-            className="bg-raised text-faint size-12 shrink-0 rounded-[var(--radius-control)] text-xl"
+            className={`bg-raised size-12 shrink-0 rounded-(--radius-control) text-xl ${
+              emoji
+                ? ''
+                : 'text-faint shadow-[inset_0_0_0_1px_var(--color-line)]'
+            }`}
           >
             {emoji ?? '+'}
           </button>

@@ -5,15 +5,15 @@ import { z } from 'zod'
 import { db } from '#/db'
 import { foods } from '#/db/schema'
 import { authMiddleware } from '#/lib/auth-middleware'
-import { isValidEmoji, normalizeEmoji } from '#/lib/emoji'
+import { isValidEmoji } from '#/lib/emoji'
 
 const foodInput = z.object({
   name: z.string().trim().min(1).max(40),
   emoji: z
     .string()
+    .trim()
+    .min(1, 'Pick an emoji')
     .max(16)
-    .nullable()
-    .transform(normalizeEmoji)
     .refine(isValidEmoji, 'Must be a single emoji'),
   calories: z.number().int().min(0).max(10000),
   showOnGrid: z.boolean(),

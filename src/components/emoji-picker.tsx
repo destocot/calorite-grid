@@ -2,12 +2,12 @@ import { FOOD_EMOJI } from '#/lib/emoji'
 
 interface EmojiPickerProps {
   value: string | null
-  onChange: (emoji: string | null) => void
+  onChange: (emoji: string) => void
   onClose: () => void
 }
 
 export function EmojiPicker({ value, onChange, onClose }: EmojiPickerProps) {
-  function choose(emoji: string | null) {
+  function choose(emoji: string) {
     onChange(emoji)
     onClose()
   }
@@ -24,12 +24,8 @@ export function EmojiPicker({ value, onChange, onClose }: EmojiPickerProps) {
       <div className="bg-surface mx-auto flex w-full max-w-sm flex-col gap-3 rounded-t-[var(--radius-card)] p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
         <div className="flex items-center justify-between">
           <span className="eyebrow">Pick an emoji</span>
-          <button
-            type="button"
-            onClick={() => choose(null)}
-            className="nav-link -mr-2"
-          >
-            None
+          <button type="button" onClick={onClose} className="nav-link -mr-2">
+            Close
           </button>
         </div>
 
