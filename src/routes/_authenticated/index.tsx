@@ -249,6 +249,49 @@ const HomePage = () => {
               gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
             }}
           >
+            {data.extras.map((extra) => (
+              <button
+                key={extra.id}
+                type="button"
+                aria-label={`Remove ${extra.name}`}
+                onPointerDown={beginPress}
+                onClick={(event) => {
+                  if (!isTap(event)) return
+
+                  buzz()
+                  setStamped(extra.id)
+                  removeExtra.mutate(extra.id)
+                }}
+                onAnimationEnd={(event) => {
+                  if (event.target === event.currentTarget) setStamped(null)
+                }}
+                style={{ borderRadius: 'var(--radius-card)' }}
+                className={`ease-punch bg-paper/8 text-paper/85 border-paper/30 flex aspect-2/3 flex-col items-center justify-between overflow-hidden border border-dashed p-2.5 transition-[background-color,border-color] duration-200 active:scale-[0.95] ${
+                  stamped === extra.id ? 'animate-stamp' : ''
+                }`}
+              >
+                <span className="flex min-h-0 flex-1 flex-col items-center justify-center gap-1.5">
+                  <span
+                    className={`${dense ? 'text-[1.625rem]' : 'text-[2.25rem]'} leading-none opacity-75 ${
+                      stamped === extra.id ? 'animate-pop' : ''
+                    }`}
+                  >
+                    {extra.emoji}
+                  </span>
+                  <span
+                    className={`line-clamp-3 text-center leading-[1.15] font-semibold wrap-break-word hyphens-auto ${
+                      dense ? 'text-[0.8125rem]' : 'text-[1.0625rem]'
+                    }`}
+                  >
+                    {extra.name}
+                  </span>
+                </span>
+                <span className="numeral shrink-0 text-[0.6875rem] font-medium tracking-wide opacity-50">
+                  {extra.calories}
+                </span>
+              </button>
+            ))}
+
             {orderedFoods.map((food) => {
               const multiplier = data.logged[food.id]
               const logged = multiplier !== undefined
@@ -345,49 +388,6 @@ const HomePage = () => {
                 </div>
               )
             })}
-
-            {data.extras.map((extra) => (
-              <button
-                key={extra.id}
-                type="button"
-                aria-label={`Remove ${extra.name}`}
-                onPointerDown={beginPress}
-                onClick={(event) => {
-                  if (!isTap(event)) return
-
-                  buzz()
-                  setStamped(extra.id)
-                  removeExtra.mutate(extra.id)
-                }}
-                onAnimationEnd={(event) => {
-                  if (event.target === event.currentTarget) setStamped(null)
-                }}
-                style={{ borderRadius: 'var(--radius-card)' }}
-                className={`ease-punch bg-paper/8 text-paper/85 border-paper/30 flex aspect-2/3 flex-col items-center justify-between overflow-hidden border border-dashed p-2.5 transition-[background-color,border-color] duration-200 active:scale-[0.95] ${
-                  stamped === extra.id ? 'animate-stamp' : ''
-                }`}
-              >
-                <span className="flex min-h-0 flex-1 flex-col items-center justify-center gap-1.5">
-                  <span
-                    className={`${dense ? 'text-[1.625rem]' : 'text-[2.25rem]'} leading-none opacity-75 ${
-                      stamped === extra.id ? 'animate-pop' : ''
-                    }`}
-                  >
-                    {extra.emoji}
-                  </span>
-                  <span
-                    className={`line-clamp-3 text-center leading-[1.15] font-semibold wrap-break-word hyphens-auto ${
-                      dense ? 'text-[0.8125rem]' : 'text-[1.0625rem]'
-                    }`}
-                  >
-                    {extra.name}
-                  </span>
-                </span>
-                <span className="numeral shrink-0 text-[0.6875rem] font-medium tracking-wide opacity-50">
-                  {extra.calories}
-                </span>
-              </button>
-            ))}
 
             <button
               type="button"
