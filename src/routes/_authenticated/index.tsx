@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, createFileRoute } from '@tanstack/react-router'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { OneOffSheet } from '#/components/one-off-sheet'
 import { formatLocalDate } from '#/lib/local-date'
@@ -18,6 +18,7 @@ import type { OneOffValues } from '#/components/one-off-sheet'
 import type { MouseEvent, PointerEvent } from 'react'
 
 const TAP_SLOP = 10
+const NEAR_GOAL = 0.9
 
 interface GridOrder {
   localDate: string
@@ -29,6 +30,18 @@ type Grid = Awaited<ReturnType<typeof getGrid>>
 interface ServingChange {
   foodId: string
   multiplier: number
+}
+
+interface GoalTone {
+  text: string
+  fill: string
+}
+
+const getGoalTone = (over: boolean, near: boolean): GoalTone => {
+  if (over) return { text: 'text-ember', fill: 'bg-ember' }
+  if (near) return { text: 'text-amber', fill: 'bg-amber' }
+
+  return { text: '', fill: 'bg-paper' }
 }
 
 const columnsFor = (count: number): number =>
@@ -57,6 +70,18 @@ const HomePage = () => {
 
   const orderRef = useRef<GridOrder | null>(null)
   const pressRef = useRef<{ x: number; y: number } | null>(null)
+
+  const [crossed, setCrossed] = useState(false)
+  const wasOverRef = useRef(false)
+
+  // Fires on the tap that tips you over, not for as long as you stay over.
+  useEffect(() => {
+    if (!data) return
+
+    const over = data.calorieGoal !== null && data.total > data.calorieGoal
+    if (over && !wasOverRef.current) setCrossed(true)
+    wasOverRef.current = over
+  }, [data])
 
   const beginPress = (event: PointerEvent) => {
     pressRef.current = { x: event.clientX, y: event.clientY }
@@ -194,20 +219,22 @@ const HomePage = () => {
       localDate,
       ids: [...data.foods]
         .sort(
-          (a, b) =>
-            Number(b.id in data.logged) - Number(a.id in data.logged),
+          (a, b) => Number(b.id in data.logged) - Number(a.id in data.logged),
         )
         .map((food) => food.id),
     }
   }
 
-  const overGoal =
-    data.calorieGoal !== null && data.total > data.calorieGoal
+  const goal = data.calorieGoal
+  const ratio = goal !== null && goal > 0 ? data.total / goal : 0
+  const overGoal = goal !== null && data.total > goal
+  const nearGoal = !overGoal && ratio >= NEAR_GOAL
+
+  const goalTone = getGoalTone(overGoal, nearGoal)
 
   const rank = new Map(orderRef.current.ids.map((id, index) => [id, index]))
   const orderedFoods = [...data.foods].sort(
-    (a, b) =>
-      (rank.get(a.id) ?? rank.size) - (rank.get(b.id) ?? rank.size),
+    (a, b) => (rank.get(a.id) ?? rank.size) - (rank.get(b.id) ?? rank.size),
   )
 
   return (
@@ -216,8 +243,9 @@ const HomePage = () => {
         <p className="eyebrow">Calories today</p>
         <div className="rule mt-2 flex items-end justify-between pt-2">
           <span
-            className={`numeral text-[3.25rem] leading-[0.95] font-extrabold tracking-[-0.03em] transition-colors duration-300 ${
-              overGoal ? 'text-ember' : ''
+            onAnimationEnd={() => setCrossed(false)}
+            className={`numeral origin-left text-[3.25rem] leading-[0.95] font-extrabold tracking-[-0.03em] transition-colors duration-300 ${goalTone.text} ${
+              crossed ? 'animate-stamp' : ''
             }`}
           >
             {data.total.toLocaleString()}
@@ -226,16 +254,28 @@ const HomePage = () => {
             <span className="text-muted text-xs">
               {formatLocalDate(localDate)}
             </span>
-            {data.calorieGoal !== null && (
+            {goal !== null && (
               <span
-                className={`numeral text-xs ${overGoal ? 'text-ember' : 'text-faint'}`}
+                className={`numeral text-xs transition-colors duration-300 ${
+                  goalTone.text || 'text-faint'
+                }`}
               >
-                of {data.calorieGoal.toLocaleString()}
+                of {goal.toLocaleString()}
               </span>
             )}
           </div>
         </div>
-        <div className="rule mt-2" />
+
+        {goal === null ? (
+          <div className="rule mt-2" />
+        ) : (
+          <div className="bg-line mt-2 h-px">
+            <div
+              className={`h-full transition-[width,background-color] duration-300 ${goalTone.fill}`}
+              style={{ width: `${Math.min(100, ratio * 100)}%` }}
+            />
+          </div>
+        )}
       </header>
 
       {data.foods.length === 0 && data.extras.length === 0 ? (
