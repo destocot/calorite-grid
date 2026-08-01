@@ -2,10 +2,19 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 
+import { OneOffSheet } from '#/components/one-off-sheet'
 import { formatLocalDate } from '#/lib/local-date'
 import { MULTIPLIERS, applyMultiplier, formatMultiplier } from '#/lib/servings'
 import { useLocalDate } from '#/lib/use-local-date'
-import { getGrid, setMultiplier, toggleFood } from '#/server/grid'
+import {
+  addOneOff,
+  getGrid,
+  removeEntry,
+  setMultiplier,
+  toggleFood,
+} from '#/server/grid'
+
+import type { OneOffValues } from '#/components/one-off-sheet'
 
 type Grid = Awaited<ReturnType<typeof getGrid>>
 
@@ -36,6 +45,7 @@ const HomePage = () => {
   })
 
   const [stamped, setStamped] = useState<string | null>(null)
+  const [adding, setAdding] = useState(false)
 
   const rollback = (
     _error: unknown,
@@ -112,11 +122,42 @@ const HomePage = () => {
     onSettled: () => queryClient.invalidateQueries({ queryKey }),
   })
 
+  const addExtra = useMutation({
+    mutationFn: (values: OneOffValues) =>
+      addOneOff({ data: { ...values, localDate } }),
+    onSettled: () => queryClient.invalidateQueries({ queryKey }),
+  })
+
+  const removeExtra = useMutation({
+    mutationFn: (id: string) => removeEntry({ data: { id, localDate } }),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey })
+      const previous = queryClient.getQueryData<Grid>(queryKey)
+
+      queryClient.setQueryData<Grid>(queryKey, (current) => {
+        if (!current) return current
+
+        const extra = current.extras.find((item) => item.id === id)
+        if (!extra) return current
+
+        return {
+          ...current,
+          extras: current.extras.filter((item) => item.id !== id),
+          total: current.total - extra.calories,
+        }
+      })
+
+      return { previous }
+    },
+    onError: rollback,
+    onSettled: () => queryClient.invalidateQueries({ queryKey }),
+  })
+
   if (!data) {
     return <GridSkeleton localDate={localDate} />
   }
 
-  const columns = columnsFor(data.foods.length)
+  const columns = columnsFor(data.foods.length + data.extras.length + 1)
   const dense = columns > 2
 
   return (
@@ -134,7 +175,7 @@ const HomePage = () => {
         <div className="rule mt-2" />
       </header>
 
-      {data.foods.length === 0 ? (
+      {data.foods.length === 0 && data.extras.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-5">
           <p className="text-muted text-center text-sm">
             Nothing on the grid yet.
@@ -145,6 +186,13 @@ const HomePage = () => {
           >
             Add your first food
           </Link>
+          <button
+            type="button"
+            onClick={() => setAdding(true)}
+            className="nav-link"
+          >
+            Or log something one-off
+          </button>
         </div>
       ) : (
         <div className="no-scrollbar flex min-h-0 flex-1 overflow-x-hidden overflow-y-auto py-4">
@@ -244,6 +292,56 @@ const HomePage = () => {
                 </div>
               )
             })}
+
+            {data.extras.map((extra) => (
+              <button
+                key={extra.id}
+                type="button"
+                aria-label={`Remove ${extra.name}`}
+                onClick={() => {
+                  buzz()
+                  setStamped(extra.id)
+                  removeExtra.mutate(extra.id)
+                }}
+                onAnimationEnd={(event) => {
+                  if (event.target === event.currentTarget) setStamped(null)
+                }}
+                style={{ borderRadius: 'var(--radius-card)' }}
+                className={`ease-punch bg-paper text-canvas border-canvas/25 flex aspect-2/3 flex-col items-center justify-between overflow-hidden border border-dashed p-2.5 shadow-[0_6px_20px_-8px_rgba(240,234,221,0.45)] transition-[background-color,color,box-shadow] duration-200 active:scale-[0.95] ${
+                  stamped === extra.id ? 'animate-stamp' : ''
+                }`}
+              >
+                <span className="flex min-h-0 flex-1 flex-col items-center justify-center gap-1.5">
+                  <span
+                    className={`${dense ? 'text-[1.625rem]' : 'text-[2.25rem]'} leading-none ${
+                      stamped === extra.id ? 'animate-pop' : ''
+                    }`}
+                  >
+                    {extra.emoji}
+                  </span>
+                  <span
+                    className={`line-clamp-3 text-center leading-[1.15] font-semibold wrap-break-word hyphens-auto ${
+                      dense ? 'text-[0.8125rem]' : 'text-[1.0625rem]'
+                    }`}
+                  >
+                    {extra.name}
+                  </span>
+                </span>
+                <span className="numeral shrink-0 text-[0.6875rem] font-medium tracking-wide opacity-60">
+                  {extra.calories}
+                </span>
+              </button>
+            ))}
+
+            <button
+              type="button"
+              aria-label="Add a one-off food"
+              onClick={() => setAdding(true)}
+              style={{ borderRadius: 'var(--radius-card)' }}
+              className="ease-punch text-faint border-line grid aspect-2/3 place-items-center border border-dashed transition-colors duration-200 active:scale-[0.95]"
+            >
+              <span className="text-2xl leading-none">+</span>
+            </button>
           </div>
         </div>
       )}
@@ -259,6 +357,13 @@ const HomePage = () => {
           Settings
         </Link>
       </nav>
+
+      {adding && (
+        <OneOffSheet
+          onAdd={(values) => addExtra.mutate(values)}
+          onClose={() => setAdding(false)}
+        />
+      )}
     </main>
   )
 }
