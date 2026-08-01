@@ -3,7 +3,7 @@ import { and, asc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { db } from '#/db'
-import { foods } from '#/db/schema'
+import { entries, foods } from '#/db/schema'
 import { authMiddleware } from '#/lib/auth-middleware'
 import { isValidEmoji } from '#/lib/emoji'
 
@@ -84,16 +84,30 @@ export const reorderFoods = createServerFn({ method: 'POST' })
 
 export const deleteFood = createServerFn({ method: 'POST' })
   .middleware([authMiddleware])
-  .validator(z.object({ id: z.uuid() }))
-  .handler(async ({ data, context }) => {
-    const removed = await db
-      .delete(foods)
-      .where(and(eq(foods.id, data.id), eq(foods.userId, context.user.id)))
-      .returning({ id: foods.id })
+  .validator(z.object({ id: z.uuid(), localDate: z.iso.date() }))
+  .handler(async ({ data, context }) =>
+    // Today's entry goes with the food; earlier days keep theirs, so the
+    // foodId there just falls to null and the snapshot survives.
+    db.transaction(async (tx) => {
+      await tx
+        .delete(entries)
+        .where(
+          and(
+            eq(entries.userId, context.user.id),
+            eq(entries.foodId, data.id),
+            eq(entries.localDate, data.localDate),
+          ),
+        )
 
-    if (removed.length === 0) {
-      throw new Error('Food not found')
-    }
+      const removed = await tx
+        .delete(foods)
+        .where(and(eq(foods.id, data.id), eq(foods.userId, context.user.id)))
+        .returning({ id: foods.id })
 
-    return removed[0]
-  })
+      if (removed.length === 0) {
+        throw new Error('Food not found')
+      }
+
+      return removed[0]
+    }),
+  )

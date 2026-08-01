@@ -23,6 +23,7 @@ import { Link, createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 
 import { EmojiPicker } from '#/components/emoji-picker'
+import { useLocalDate } from '#/lib/use-local-date'
 import {
   createFood,
   deleteFood,
@@ -227,6 +228,7 @@ const SortableFoodRow = (props: Readonly<FoodCardProps>) => {
 
 const FoodsPage = () => {
   const queryClient = useQueryClient()
+  const localDate = useLocalDate()
   const queryKey = ['foods']
 
   const { data: foods } = useQuery({ queryKey, queryFn: () => listFoods() })
@@ -248,7 +250,7 @@ const FoodsPage = () => {
   })
 
   const remove = useMutation({
-    mutationFn: (id: string) => deleteFood({ data: { id } }),
+    mutationFn: (id: string) => deleteFood({ data: { id, localDate } }),
     onSuccess: invalidate,
   })
 
