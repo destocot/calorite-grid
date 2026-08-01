@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link, createFileRoute } from '@tanstack/react-router'
 
 import { formatLocalDate, localDateString } from '#/lib/local-date'
+import { formatMultiplier } from '#/lib/servings'
 import { getHistory } from '#/server/history'
 
 const HistoryPage = () => {
@@ -86,6 +87,11 @@ const HistoryPage = () => {
                   <span className="text-ink/85 min-w-0 flex-1 truncate text-sm">
                     {item.name}
                   </span>
+                  {item.multiplier !== 1 && (
+                    <span className="numeral text-faint shrink-0 text-xs">
+                      &times;{formatMultiplier(item.multiplier)}
+                    </span>
+                  )}
                   <span className="numeral text-muted shrink-0 text-sm">
                     {item.calories}
                   </span>

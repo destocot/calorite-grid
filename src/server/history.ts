@@ -4,12 +4,14 @@ import { asc, desc, eq } from 'drizzle-orm'
 import { db } from '#/db'
 import { entries } from '#/db/schema'
 import { authMiddleware } from '#/lib/auth-middleware'
+import { applyMultiplier } from '#/lib/servings'
 
 interface DayItem {
   id: string
   name: string
   emoji: string | null
   calories: number
+  multiplier: number
 }
 
 interface Day {
@@ -28,6 +30,7 @@ export const getHistory = createServerFn({ method: 'GET' })
         foodName: entries.foodName,
         foodEmoji: entries.foodEmoji,
         calories: entries.calories,
+        multiplier: entries.multiplier,
       })
       .from(entries)
       .where(eq(entries.userId, context.user.id))
@@ -42,12 +45,15 @@ export const getHistory = createServerFn({ method: 'GET' })
         items: [],
       }
 
-      day.total += row.calories
+      const logged = applyMultiplier(row.calories, row.multiplier)
+
+      day.total += logged
       day.items.push({
         id: row.id,
         name: row.foodName,
         emoji: row.foodEmoji,
-        calories: row.calories,
+        calories: logged,
+        multiplier: row.multiplier,
       })
       days.set(row.localDate, day)
     }

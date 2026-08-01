@@ -5,6 +5,7 @@ import {
   index,
   integer,
   pgTable,
+  real,
   text,
   timestamp,
   unique,
@@ -107,7 +108,9 @@ export const entries = pgTable(
     localDate: date('local_date', { mode: 'string' }).notNull(),
     foodName: text('food_name').notNull(),
     foodEmoji: text('food_emoji'),
+    // Per-serving snapshot; the logged amount is calories * multiplier.
     calories: integer('calories').notNull(),
+    multiplier: real('multiplier').default(1).notNull(),
   },
   (table) => [
     unique('entries_userId_foodId_localDate_unq').on(

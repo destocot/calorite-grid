@@ -3,10 +3,16 @@ import { Link, createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 
 import { formatLocalDate } from '#/lib/local-date'
+import { MULTIPLIERS, applyMultiplier, formatMultiplier } from '#/lib/servings'
 import { useLocalDate } from '#/lib/use-local-date'
-import { getGrid, toggleFood } from '#/server/grid'
+import { getGrid, setMultiplier, toggleFood } from '#/server/grid'
 
 type Grid = Awaited<ReturnType<typeof getGrid>>
+
+interface ServingChange {
+  foodId: string
+  multiplier: number
+}
 
 const columnsFor = (count: number): number =>
   Math.min(3, Math.max(2, Math.ceil(Math.sqrt(count))))
@@ -31,6 +37,14 @@ const HomePage = () => {
 
   const [stamped, setStamped] = useState<string | null>(null)
 
+  const rollback = (
+    _error: unknown,
+    _variables: unknown,
+    context: { previous: Grid | undefined } | undefined,
+  ) => {
+    queryClient.setQueryData(queryKey, context?.previous)
+  }
+
   const toggle = useMutation({
     mutationFn: (foodId: string) => toggleFood({ data: { foodId, localDate } }),
     onMutate: async (foodId) => {
@@ -43,24 +57,58 @@ const HomePage = () => {
         const food = current.foods.find((item) => item.id === foodId)
         if (!food) return current
 
-        const wasLogged = current.loggedFoodIds.includes(foodId)
+        const was = current.logged[foodId]
+        const logged = { ...current.logged }
+
+        if (was === undefined) {
+          logged[foodId] = 1
+        } else {
+          delete logged[foodId]
+        }
 
         return {
           ...current,
-          loggedFoodIds: wasLogged
-            ? current.loggedFoodIds.filter((id) => id !== foodId)
-            : [...current.loggedFoodIds, foodId],
-          total: wasLogged
-            ? current.total - food.calories
-            : current.total + food.calories,
+          logged,
+          total:
+            was === undefined
+              ? current.total + food.calories
+              : current.total - applyMultiplier(food.calories, was),
         }
       })
 
       return { previous }
     },
-    onError: (_error, _foodId, context) => {
-      queryClient.setQueryData(queryKey, context?.previous)
+    onError: rollback,
+    onSettled: () => queryClient.invalidateQueries({ queryKey }),
+  })
+
+  const servings = useMutation({
+    mutationFn: ({ foodId, multiplier }: ServingChange) =>
+      setMultiplier({ data: { foodId, localDate, multiplier } }),
+    onMutate: async ({ foodId, multiplier }) => {
+      await queryClient.cancelQueries({ queryKey })
+      const previous = queryClient.getQueryData<Grid>(queryKey)
+
+      queryClient.setQueryData<Grid>(queryKey, (current) => {
+        if (!current) return current
+
+        const food = current.foods.find((item) => item.id === foodId)
+        const was = current.logged[foodId]
+        if (!food || was === undefined) return current
+
+        return {
+          ...current,
+          logged: { ...current.logged, [foodId]: multiplier },
+          total:
+            current.total -
+            applyMultiplier(food.calories, was) +
+            applyMultiplier(food.calories, multiplier),
+        }
+      })
+
+      return { previous }
     },
+    onError: rollback,
     onSettled: () => queryClient.invalidateQueries({ queryKey }),
   })
 
@@ -107,23 +155,17 @@ const HomePage = () => {
             }}
           >
             {data.foods.map((food) => {
-              const logged = data.loggedFoodIds.includes(food.id)
+              const multiplier = data.logged[food.id]
+              const logged = multiplier !== undefined
 
               return (
-                <button
+                <div
                   key={food.id}
-                  type="button"
-                  aria-pressed={logged}
-                  onClick={() => {
-                    buzz()
-                    setStamped(food.id)
-                    toggle.mutate(food.id)
-                  }}
                   onAnimationEnd={(event) => {
                     if (event.target === event.currentTarget) setStamped(null)
                   }}
                   style={{ borderRadius: 'var(--radius-card)' }}
-                  className={`ease-punch flex aspect-2/3 flex-col items-center justify-between overflow-hidden p-2.5 transition-[background-color,color,box-shadow] duration-200 active:scale-[0.95] ${
+                  className={`ease-punch relative flex aspect-2/3 overflow-hidden transition-[background-color,color,box-shadow] duration-200 has-[[data-tap]:active]:scale-[0.95] ${
                     stamped === food.id ? 'animate-stamp' : ''
                   } ${
                     logged
@@ -131,30 +173,75 @@ const HomePage = () => {
                       : 'bg-raised text-muted shadow-[inset_0_0_0_1px_var(--color-line)]'
                   }`}
                 >
-                  <span className="flex min-h-0 flex-1 flex-col items-center justify-center gap-1.5">
-                    <span
-                      className={`${dense ? 'text-[1.625rem]' : 'text-[2.25rem]'} leading-none transition-[filter,opacity] duration-200 ${
-                        stamped === food.id ? 'animate-pop' : ''
-                      } ${
-                        logged
-                          ? 'opacity-100 grayscale-0'
-                          : 'opacity-80 grayscale'
-                      }`}
-                    >
-                      {food.emoji}
+                  <button
+                    data-tap=""
+                    type="button"
+                    aria-pressed={logged}
+                    aria-label={food.name}
+                    onClick={() => {
+                      buzz()
+                      setStamped(food.id)
+                      toggle.mutate(food.id)
+                    }}
+                    className="absolute inset-0"
+                  />
+
+                  <div className="pointer-events-none relative flex min-w-0 flex-1 flex-col p-2.5">
+                    <span className="flex min-h-0 flex-1 flex-col items-center justify-center gap-1.5">
+                      <span
+                        className={`${dense ? 'text-[1.625rem]' : 'text-[2.25rem]'} leading-none transition-[filter,opacity] duration-200 ${
+                          stamped === food.id ? 'animate-pop' : ''
+                        } ${
+                          logged
+                            ? 'opacity-100 grayscale-0'
+                            : 'opacity-80 grayscale'
+                        }`}
+                      >
+                        {food.emoji}
+                      </span>
+                      <span
+                        className={`line-clamp-3 text-center leading-[1.15] font-semibold wrap-break-word hyphens-auto ${
+                          dense ? 'text-[0.8125rem]' : 'text-[1.0625rem]'
+                        } ${logged ? '' : 'text-ink/75'}`}
+                      >
+                        {food.name}
+                      </span>
                     </span>
-                    <span
-                      className={`line-clamp-3 text-center leading-[1.15] font-semibold wrap-break-word hyphens-auto ${
-                        dense ? 'text-[0.8125rem]' : 'text-[1.0625rem]'
-                      } ${logged ? '' : 'text-ink/75'}`}
-                    >
-                      {food.name}
+
+                    <span className="numeral shrink-0 text-center text-[0.6875rem] font-medium tracking-wide opacity-60">
+                      {logged
+                        ? applyMultiplier(food.calories, multiplier)
+                        : food.calories}
                     </span>
-                  </span>
-                  <span className="numeral shrink-0 text-[0.6875rem] font-medium tracking-wide opacity-60">
-                    {food.calories}
-                  </span>
-                </button>
+
+                    {logged && (
+                      <div className="bg-canvas/12 pointer-events-auto mt-1.5 flex shrink-0 gap-0.5 rounded-full p-0.5">
+                        {MULTIPLIERS.map((value) => (
+                          <button
+                            key={value}
+                            type="button"
+                            aria-pressed={multiplier === value}
+                            aria-label={`${formatMultiplier(value)} serving`}
+                            onClick={() => {
+                              buzz()
+                              servings.mutate({
+                                foodId: food.id,
+                                multiplier: value,
+                              })
+                            }}
+                            className={`numeral min-w-0 flex-1 rounded-full py-1 text-[0.6875rem] leading-none font-semibold transition-colors duration-150 ${
+                              multiplier === value
+                                ? 'bg-canvas text-paper'
+                                : 'text-canvas/55'
+                            }`}
+                          >
+                            {formatMultiplier(value)}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
               )
             })}
           </div>

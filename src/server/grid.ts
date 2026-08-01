@@ -5,14 +5,16 @@ import { z } from 'zod'
 import { db } from '#/db'
 import { entries, foods } from '#/db/schema'
 import { authMiddleware } from '#/lib/auth-middleware'
+import { applyMultiplier, isMultiplier } from '#/lib/servings'
 
 const localDate = z.iso.date()
+const multiplier = z.number().refine(isMultiplier, 'Unsupported serving size')
 
 export const getGrid = createServerFn({ method: 'GET' })
   .middleware([authMiddleware])
   .validator(z.object({ localDate }))
   .handler(async ({ data, context }) => {
-    const [gridFoods, logged] = await Promise.all([
+    const [gridFoods, rows] = await Promise.all([
       db
         .select({
           id: foods.id,
@@ -26,7 +28,11 @@ export const getGrid = createServerFn({ method: 'GET' })
         )
         .orderBy(asc(foods.sortOrder), asc(foods.createdAt)),
       db
-        .select({ foodId: entries.foodId, calories: entries.calories })
+        .select({
+          foodId: entries.foodId,
+          calories: entries.calories,
+          multiplier: entries.multiplier,
+        })
         .from(entries)
         .where(
           and(
@@ -36,11 +42,15 @@ export const getGrid = createServerFn({ method: 'GET' })
         ),
     ])
 
-    return {
-      foods: gridFoods,
-      loggedFoodIds: logged.map((entry) => entry.foodId),
-      total: logged.reduce((sum, entry) => sum + entry.calories, 0),
+    const logged: Record<string, number> = {}
+    let total = 0
+
+    for (const row of rows) {
+      total += applyMultiplier(row.calories, row.multiplier)
+      if (row.foodId) logged[row.foodId] = row.multiplier
     }
+
+    return { foods: gridFoods, logged, total }
   })
 
 export const toggleFood = createServerFn({ method: 'POST' })
@@ -85,4 +95,27 @@ export const toggleFood = createServerFn({ method: 'POST' })
     })
 
     return { logged: true }
+  })
+
+export const setMultiplier = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware])
+  .validator(z.object({ foodId: z.uuid(), localDate, multiplier }))
+  .handler(async ({ data, context }) => {
+    const updated = await db
+      .update(entries)
+      .set({ multiplier: data.multiplier })
+      .where(
+        and(
+          eq(entries.userId, context.user.id),
+          eq(entries.foodId, data.foodId),
+          eq(entries.localDate, data.localDate),
+        ),
+      )
+      .returning({ id: entries.id })
+
+    if (updated.length === 0) {
+      throw new Error('Entry not found')
+    }
+
+    return { ok: true }
   })
