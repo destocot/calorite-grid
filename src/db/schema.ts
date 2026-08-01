@@ -31,6 +31,8 @@ export const users = pgTable('users', {
   image: text('image'),
   username: text('username').unique(),
   displayUsername: text('display_username'),
+  // Null means the user has never set one, which is not the same as zero.
+  calorieGoal: integer('calorie_goal'),
 })
 
 export const sessions = pgTable(

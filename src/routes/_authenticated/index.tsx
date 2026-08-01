@@ -201,6 +201,9 @@ const HomePage = () => {
     }
   }
 
+  const overGoal =
+    data.calorieGoal !== null && data.total > data.calorieGoal
+
   const rank = new Map(orderRef.current.ids.map((id, index) => [id, index]))
   const orderedFoods = [...data.foods].sort(
     (a, b) =>
@@ -212,12 +215,25 @@ const HomePage = () => {
       <header className="shrink-0">
         <p className="eyebrow">Calories today</p>
         <div className="rule mt-2 flex items-end justify-between pt-2">
-          <span className="numeral text-[3.25rem] leading-[0.95] font-extrabold tracking-[-0.03em]">
+          <span
+            className={`numeral text-[3.25rem] leading-[0.95] font-extrabold tracking-[-0.03em] transition-colors duration-300 ${
+              overGoal ? 'text-ember' : ''
+            }`}
+          >
             {data.total.toLocaleString()}
           </span>
-          <span className="text-muted pb-1 text-xs">
-            {formatLocalDate(localDate)}
-          </span>
+          <div className="flex flex-col items-end pb-1">
+            <span className="text-muted text-xs">
+              {formatLocalDate(localDate)}
+            </span>
+            {data.calorieGoal !== null && (
+              <span
+                className={`numeral text-xs ${overGoal ? 'text-ember' : 'text-faint'}`}
+              >
+                of {data.calorieGoal.toLocaleString()}
+              </span>
+            )}
+          </div>
         </div>
         <div className="rule mt-2" />
       </header>

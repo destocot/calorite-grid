@@ -3,7 +3,7 @@ import { and, asc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { db } from '#/db'
-import { entries, foods } from '#/db/schema'
+import { entries, foods, users } from '#/db/schema'
 import { authMiddleware } from '#/lib/auth-middleware'
 import { applyMultiplier, isMultiplier } from '#/lib/servings'
 
@@ -25,7 +25,7 @@ export const getGrid = createServerFn({ method: 'GET' })
   .middleware([authMiddleware])
   .validator(z.object({ localDate }))
   .handler(async ({ data, context }) => {
-    const [gridFoods, rows] = await Promise.all([
+    const [gridFoods, rows, [profile]] = await Promise.all([
       db
         .select({
           id: foods.id,
@@ -54,6 +54,10 @@ export const getGrid = createServerFn({ method: 'GET' })
             eq(entries.localDate, data.localDate),
           ),
         ),
+      db
+        .select({ calorieGoal: users.calorieGoal })
+        .from(users)
+        .where(eq(users.id, context.user.id)),
     ])
 
     const logged: Record<string, number> = {}
@@ -76,7 +80,13 @@ export const getGrid = createServerFn({ method: 'GET' })
       }
     }
 
-    return { foods: gridFoods, logged, extras, total }
+    return {
+      foods: gridFoods,
+      logged,
+      extras,
+      total,
+      calorieGoal: profile?.calorieGoal ?? null,
+    }
   })
 
 export const toggleFood = createServerFn({ method: 'POST' })
