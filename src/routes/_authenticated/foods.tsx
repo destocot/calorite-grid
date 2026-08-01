@@ -215,7 +215,7 @@ const SortableFoodRow = (props: Readonly<FoodCardProps>) => {
     <li
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`panel touch-none p-2.5 transition-shadow ${
+      className={`panel touch-pan-y p-2.5 transition-shadow ${
         isDragging ? 'z-10 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.8)]' : ''
       }`}
       {...attributes}
