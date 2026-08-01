@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
 import { OneOffSheet } from '#/components/one-off-sheet'
 import { formatLocalDate } from '#/lib/local-date'
@@ -15,6 +15,14 @@ import {
 } from '#/server/grid'
 
 import type { OneOffValues } from '#/components/one-off-sheet'
+import type { MouseEvent, PointerEvent } from 'react'
+
+const TAP_SLOP = 10
+
+interface GridOrder {
+  localDate: string
+  ids: Array<string>
+}
 
 type Grid = Awaited<ReturnType<typeof getGrid>>
 
@@ -46,6 +54,25 @@ const HomePage = () => {
 
   const [stamped, setStamped] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
+
+  const orderRef = useRef<GridOrder | null>(null)
+  const pressRef = useRef<{ x: number; y: number } | null>(null)
+
+  const beginPress = (event: PointerEvent) => {
+    pressRef.current = { x: event.clientX, y: event.clientY }
+  }
+
+  // A drag that scrolls the grid must not also toggle whatever it started on.
+  const isTap = (event: MouseEvent): boolean => {
+    const start = pressRef.current
+    pressRef.current = null
+    if (!start) return true
+
+    return (
+      Math.abs(event.clientX - start.x) < TAP_SLOP &&
+      Math.abs(event.clientY - start.y) < TAP_SLOP
+    )
+  }
 
   const rollback = (
     _error: unknown,
@@ -160,6 +187,26 @@ const HomePage = () => {
   const columns = columnsFor(data.foods.length + data.extras.length + 1)
   const dense = columns > 2
 
+  // Logged foods float up, but only on the first paint of a day. Re-sorting on
+  // every tap would slide the grid out from under the thumb mid-tap.
+  if (orderRef.current?.localDate !== localDate) {
+    orderRef.current = {
+      localDate,
+      ids: [...data.foods]
+        .sort(
+          (a, b) =>
+            Number(b.id in data.logged) - Number(a.id in data.logged),
+        )
+        .map((food) => food.id),
+    }
+  }
+
+  const rank = new Map(orderRef.current.ids.map((id, index) => [id, index]))
+  const orderedFoods = [...data.foods].sort(
+    (a, b) =>
+      (rank.get(a.id) ?? rank.size) - (rank.get(b.id) ?? rank.size),
+  )
+
   return (
     <main className="flex h-full flex-col px-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
       <header className="shrink-0">
@@ -202,7 +249,7 @@ const HomePage = () => {
               gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
             }}
           >
-            {data.foods.map((food) => {
+            {orderedFoods.map((food) => {
               const multiplier = data.logged[food.id]
               const logged = multiplier !== undefined
 
@@ -226,7 +273,10 @@ const HomePage = () => {
                     type="button"
                     aria-pressed={logged}
                     aria-label={food.name}
-                    onClick={() => {
+                    onPointerDown={beginPress}
+                    onClick={(event) => {
+                      if (!isTap(event)) return
+
                       buzz()
                       setStamped(food.id)
                       toggle.mutate(food.id)
@@ -270,7 +320,10 @@ const HomePage = () => {
                             type="button"
                             aria-pressed={multiplier === value}
                             aria-label={`${formatMultiplier(value)} serving`}
-                            onClick={() => {
+                            onPointerDown={beginPress}
+                            onClick={(event) => {
+                              if (!isTap(event)) return
+
                               buzz()
                               servings.mutate({
                                 foodId: food.id,
@@ -298,7 +351,10 @@ const HomePage = () => {
                 key={extra.id}
                 type="button"
                 aria-label={`Remove ${extra.name}`}
-                onClick={() => {
+                onPointerDown={beginPress}
+                onClick={(event) => {
+                  if (!isTap(event)) return
+
                   buzz()
                   setStamped(extra.id)
                   removeExtra.mutate(extra.id)
@@ -307,13 +363,13 @@ const HomePage = () => {
                   if (event.target === event.currentTarget) setStamped(null)
                 }}
                 style={{ borderRadius: 'var(--radius-card)' }}
-                className={`ease-punch bg-paper text-canvas border-canvas/25 flex aspect-2/3 flex-col items-center justify-between overflow-hidden border border-dashed p-2.5 shadow-[0_6px_20px_-8px_rgba(240,234,221,0.45)] transition-[background-color,color,box-shadow] duration-200 active:scale-[0.95] ${
+                className={`ease-punch bg-paper/8 text-paper/85 border-paper/30 flex aspect-2/3 flex-col items-center justify-between overflow-hidden border border-dashed p-2.5 transition-[background-color,border-color] duration-200 active:scale-[0.95] ${
                   stamped === extra.id ? 'animate-stamp' : ''
                 }`}
               >
                 <span className="flex min-h-0 flex-1 flex-col items-center justify-center gap-1.5">
                   <span
-                    className={`${dense ? 'text-[1.625rem]' : 'text-[2.25rem]'} leading-none ${
+                    className={`${dense ? 'text-[1.625rem]' : 'text-[2.25rem]'} leading-none opacity-75 ${
                       stamped === extra.id ? 'animate-pop' : ''
                     }`}
                   >
@@ -327,7 +383,7 @@ const HomePage = () => {
                     {extra.name}
                   </span>
                 </span>
-                <span className="numeral shrink-0 text-[0.6875rem] font-medium tracking-wide opacity-60">
+                <span className="numeral shrink-0 text-[0.6875rem] font-medium tracking-wide opacity-50">
                   {extra.calories}
                 </span>
               </button>
@@ -338,7 +394,7 @@ const HomePage = () => {
               aria-label="Add a one-off food"
               onClick={() => setAdding(true)}
               style={{ borderRadius: 'var(--radius-card)' }}
-              className="ease-punch text-faint border-line grid aspect-2/3 place-items-center border border-dashed transition-colors duration-200 active:scale-[0.95]"
+              className="ease-punch text-paper/35 border-paper/18 hover:text-paper/60 grid aspect-2/3 place-items-center border border-dashed transition-colors duration-200 active:scale-[0.95]"
             >
               <span className="text-2xl leading-none">+</span>
             </button>
