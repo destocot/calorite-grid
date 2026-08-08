@@ -1,18 +1,17 @@
-export const MULTIPLIERS = [0.5, 1, 2] as const
+export const MULTIPLIERS = [1, 2] as const
 
-export type Multiplier = (typeof MULTIPLIERS)[number]
+export const MAX_MULTIPLIER = 20
 
-const LABELS: Record<number, string> = {
-  0.5: '½',
-  1: '1',
-  2: '2',
-}
+// Servings are stored to two decimals; finer than that is noise on a number
+// that started life as an estimate.
+export const roundMultiplier = (value: number): number =>
+  Math.round(value * 100) / 100
 
 export const formatMultiplier = (value: number): string =>
-  LABELS[value] ?? String(value)
+  roundMultiplier(value).toString()
 
-export const isMultiplier = (value: number): value is Multiplier =>
-  MULTIPLIERS.includes(value as Multiplier)
+export const isMultiplier = (value: number): boolean =>
+  Number.isFinite(value) && value > 0 && value <= MAX_MULTIPLIER
 
 export const applyMultiplier = (calories: number, value: number): number =>
   Math.round(calories * value)

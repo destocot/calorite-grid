@@ -5,10 +5,14 @@ import { z } from 'zod'
 import { db } from '#/db'
 import { entries, foods, users } from '#/db/schema'
 import { authMiddleware } from '#/lib/auth-middleware'
-import { applyMultiplier, isMultiplier } from '#/lib/servings'
+import { applyMultiplier, isMultiplier, roundMultiplier } from '#/lib/servings'
 
 const localDate = z.iso.date()
-const multiplier = z.number().refine(isMultiplier, 'Unsupported serving size')
+// Rounded before the check so a value that rounds down to zero is rejected.
+const multiplier = z
+  .number()
+  .transform(roundMultiplier)
+  .refine(isMultiplier, 'Unsupported serving size')
 const name = z.string().trim().min(1).max(40)
 const calories = z.number().int().min(0).max(10000)
 

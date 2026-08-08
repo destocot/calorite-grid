@@ -3,6 +3,7 @@ import { Link, createFileRoute } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 
 import { OneOffSheet } from '#/components/one-off-sheet'
+import { ServingSheet } from '#/components/serving-sheet'
 import { formatLocalDate } from '#/lib/local-date'
 import { MULTIPLIERS, applyMultiplier, formatMultiplier } from '#/lib/servings'
 import { useLocalDate } from '#/lib/use-local-date'
@@ -46,6 +47,11 @@ const getGoalTone = (over: boolean, near: boolean): GoalTone => {
   return { text: '', fill: 'bg-paper' }
 }
 
+// Anything off the presets lives behind the X button, which then wears the
+// value so the tile still says what it's counting.
+const isCustom = (value: number): boolean =>
+  !MULTIPLIERS.some((preset) => preset === value)
+
 const columnsFor = (count: number): number =>
   Math.min(3, Math.max(2, Math.ceil(Math.sqrt(count))))
 
@@ -69,6 +75,7 @@ const HomePage = () => {
 
   const [stamped, setStamped] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
+  const [servingFor, setServingFor] = useState<string | null>(null)
 
   const orderRef = useRef<GridOrder | null>(null)
   const pressRef = useRef<{ x: number; y: number } | null>(null)
@@ -272,6 +279,8 @@ const HomePage = () => {
   // setting says today.
   const gymLogged = data.gymLogged
   const gymAmount = gymLogged === null ? data.gymCalories : -gymLogged
+
+  const servingFood = data.foods.find((food) => food.id === servingFor) ?? null
 
   const rank = new Map(orderRef.current.ids.map((id, index) => [id, index]))
   const orderedFoods = [...data.foods].sort(
@@ -505,6 +514,28 @@ const HomePage = () => {
                             {formatMultiplier(value)}
                           </button>
                         ))}
+
+                        <button
+                          type="button"
+                          aria-pressed={isCustom(multiplier)}
+                          aria-label="Custom serving size"
+                          onPointerDown={beginPress}
+                          onClick={(event) => {
+                            if (!isTap(event)) return
+
+                            buzz()
+                            setServingFor(food.id)
+                          }}
+                          className={`numeral min-w-0 flex-1 rounded-full py-1 text-[0.6875rem] leading-none font-semibold transition-colors duration-150 ${
+                            isCustom(multiplier)
+                              ? 'bg-canvas text-paper'
+                              : 'text-canvas/55'
+                          }`}
+                        >
+                          {isCustom(multiplier)
+                            ? formatMultiplier(multiplier)
+                            : 'x'}
+                        </button>
                       </div>
                     )}
                   </div>
@@ -531,6 +562,18 @@ const HomePage = () => {
         <OneOffSheet
           onAdd={(values) => addExtra.mutate(values)}
           onClose={() => setAdding(false)}
+        />
+      )}
+
+      {servingFood && (
+        <ServingSheet
+          name={servingFood.name}
+          calories={servingFood.calories}
+          multiplier={data.logged[servingFood.id] ?? 1}
+          onApply={(value) =>
+            servings.mutate({ foodId: servingFood.id, multiplier: value })
+          }
+          onClose={() => setServingFor(null)}
         />
       )}
     </main>
