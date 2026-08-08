@@ -13,6 +13,8 @@ const name = z.string().trim().min(1).max(40)
 const calories = z.number().int().min(0).max(10000)
 
 const ONE_OFF_EMOJI = '🍽️'
+const GYM_EMOJI = '🏋️'
+const GYM_NAME = 'Gym'
 
 interface Extra {
   id: string
@@ -46,6 +48,7 @@ export const getGrid = createServerFn({ method: 'GET' })
           foodEmoji: entries.foodEmoji,
           calories: entries.calories,
           multiplier: entries.multiplier,
+          kind: entries.kind,
         })
         .from(entries)
         .where(
@@ -55,20 +58,26 @@ export const getGrid = createServerFn({ method: 'GET' })
           ),
         ),
       db
-        .select({ calorieGoal: users.calorieGoal })
+        .select({
+          calorieGoal: users.calorieGoal,
+          gymCalories: users.gymCalories,
+        })
         .from(users)
         .where(eq(users.id, context.user.id)),
     ])
 
     const logged: Record<string, number> = {}
     const extras: Array<Extra> = []
+    let gymLogged: number | null = null
     let total = 0
 
     for (const row of rows) {
       const amount = applyMultiplier(row.calories, row.multiplier)
       total += amount
 
-      if (row.foodId) {
+      if (row.kind === 'gym') {
+        gymLogged = amount
+      } else if (row.foodId) {
         logged[row.foodId] = row.multiplier
       } else {
         extras.push({
@@ -86,6 +95,10 @@ export const getGrid = createServerFn({ method: 'GET' })
       extras,
       total,
       calorieGoal: profile?.calorieGoal ?? null,
+      // What a session is worth now vs. what today's session was worth when it
+      // was logged; changing the setting must not rewrite an existing day.
+      gymCalories: profile?.gymCalories ?? 0,
+      gymLogged,
     }
   })
 
@@ -131,6 +144,47 @@ export const toggleFood = createServerFn({ method: 'POST' })
     })
 
     return { logged: true }
+  })
+
+export const toggleGym = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware])
+  .validator(z.object({ localDate }))
+  .handler(async ({ data, context }) => {
+    const removed = await db
+      .delete(entries)
+      .where(
+        and(
+          eq(entries.userId, context.user.id),
+          eq(entries.kind, 'gym'),
+          eq(entries.localDate, data.localDate),
+        ),
+      )
+      .returning({ id: entries.id })
+
+    if (removed.length > 0) {
+      return { gymLogged: null }
+    }
+
+    const [profile] = await db
+      .select({ gymCalories: users.gymCalories })
+      .from(users)
+      .where(eq(users.id, context.user.id))
+
+    if (!profile?.gymCalories) {
+      throw new Error('Set your gym calories in settings first')
+    }
+
+    await db.insert(entries).values({
+      userId: context.user.id,
+      foodId: null,
+      localDate: data.localDate,
+      foodName: GYM_NAME,
+      foodEmoji: GYM_EMOJI,
+      calories: -profile.gymCalories,
+      kind: 'gym',
+    })
+
+    return { gymLogged: -profile.gymCalories }
   })
 
 export const addOneOff = createServerFn({ method: 'POST' })

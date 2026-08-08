@@ -6,27 +6,39 @@ import { db } from '#/db'
 import { users } from '#/db/schema'
 import { authMiddleware } from '#/lib/auth-middleware'
 
-export const getCalorieGoal = createServerFn({ method: 'GET' })
+const calories = z.number().int().min(0).max(20000)
+
+export const getSettings = createServerFn({ method: 'GET' })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
     const [row] = await db
-      .select({ calorieGoal: users.calorieGoal })
+      .select({
+        calorieGoal: users.calorieGoal,
+        gymCalories: users.gymCalories,
+      })
       .from(users)
       .where(eq(users.id, context.user.id))
 
-    return { calorieGoal: row?.calorieGoal ?? null }
+    return {
+      calorieGoal: row?.calorieGoal ?? null,
+      gymCalories: row?.gymCalories ?? 0,
+    }
   })
 
-export const setCalorieGoal = createServerFn({ method: 'POST' })
+// Each field saves on its own, so an omitted key means "leave it alone" while
+// an explicit null means "clear it".
+export const setSettings = createServerFn({ method: 'POST' })
   .middleware([authMiddleware])
   .validator(
-    z.object({ calorieGoal: z.number().int().min(0).max(20000).nullable() }),
+    z.object({
+      calorieGoal: calories.nullable().optional(),
+      gymCalories: calories.optional(),
+    }),
   )
   .handler(async ({ data, context }) => {
-    await db
-      .update(users)
-      .set({ calorieGoal: data.calorieGoal })
-      .where(eq(users.id, context.user.id))
+    if (Object.keys(data).length === 0) return data
 
-    return { calorieGoal: data.calorieGoal }
+    await db.update(users).set(data).where(eq(users.id, context.user.id))
+
+    return data
   })

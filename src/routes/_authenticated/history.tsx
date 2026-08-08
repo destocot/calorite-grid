@@ -72,8 +72,11 @@ const HistoryPage = () => {
               <div
                 className="bg-paper h-full"
                 style={{
+                  // A gym day can land at or below zero; the bar just empties.
                   width:
-                    maxTotal > 0 ? `${(day.total / maxTotal) * 100}%` : '0%',
+                    maxTotal > 0
+                      ? `${Math.max(0, (day.total / maxTotal) * 100)}%`
+                      : '0%',
                 }}
               />
             </div>
@@ -92,8 +95,14 @@ const HistoryPage = () => {
                       &times;{formatMultiplier(item.multiplier)}
                     </span>
                   )}
-                  <span className="numeral text-muted shrink-0 text-sm">
-                    {item.calories}
+                  <span
+                    className={`numeral shrink-0 text-sm ${
+                      item.calories < 0 ? 'text-amber' : 'text-muted'
+                    }`}
+                  >
+                    {item.calories < 0
+                      ? `−${Math.abs(item.calories)}`
+                      : item.calories}
                   </span>
                 </li>
               ))}

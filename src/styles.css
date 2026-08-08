@@ -128,6 +128,41 @@
     transform: none;
   }
 
+  /* Day-level actions that sit above the grid: pill-shaped so they never read
+     as another food card. */
+  .chip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4375rem;
+    height: 2.5rem;
+    border-radius: var(--radius-control);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    background: var(--color-raised);
+    color: var(--color-ink);
+    box-shadow: inset 0 0 0 1px var(--color-line);
+    transition:
+      background-color 200ms ease,
+      color 200ms ease,
+      transform 150ms var(--ease-punch);
+  }
+
+  .chip:active {
+    transform: scale(0.97);
+  }
+
+  .chip:disabled {
+    opacity: 0.35;
+    transform: none;
+  }
+
+  .chip-on {
+    background: var(--color-paper);
+    color: var(--color-canvas);
+    box-shadow: inset 0 0 0 1px rgba(11, 11, 12, 0.14);
+  }
+
   .no-scrollbar {
     scrollbar-width: none;
   }

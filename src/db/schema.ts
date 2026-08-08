@@ -9,8 +9,11 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core'
+
+export type EntryKind = 'food' | 'gym'
 
 const base = {
   id: uuid('id')
@@ -33,6 +36,8 @@ export const users = pgTable('users', {
   displayUsername: text('display_username'),
   // Null means the user has never set one, which is not the same as zero.
   calorieGoal: integer('calorie_goal'),
+  // Calories a gym session buys back; zero means the feature is off.
+  gymCalories: integer('gym_calories').default(0).notNull(),
 })
 
 export const sessions = pgTable(
@@ -111,8 +116,10 @@ export const entries = pgTable(
     foodName: text('food_name').notNull(),
     foodEmoji: text('food_emoji'),
     // Per-serving snapshot; the logged amount is calories * multiplier.
+    // Gym entries carry a negative snapshot so totals sum without special cases.
     calories: integer('calories').notNull(),
     multiplier: real('multiplier').default(1).notNull(),
+    kind: text('kind').$type<EntryKind>().default('food').notNull(),
   },
   (table) => [
     unique('entries_userId_foodId_localDate_unq').on(
@@ -120,6 +127,10 @@ export const entries = pgTable(
       table.foodId,
       table.localDate,
     ),
+    // A day is either a gym day or it isn't; one row at most.
+    uniqueIndex('entries_userId_localDate_gym_unq')
+      .on(table.userId, table.localDate)
+      .where(sql`${table.kind} = 'gym'`),
     index('entries_userId_localDate_idx').on(table.userId, table.localDate),
   ],
 )

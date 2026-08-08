@@ -12,6 +12,7 @@ import {
   removeEntry,
   setMultiplier,
   toggleFood,
+  toggleGym,
 } from '#/server/grid'
 
 import type { OneOffValues } from '#/components/one-off-sheet'
@@ -19,6 +20,7 @@ import type { MouseEvent, PointerEvent } from 'react'
 
 const TAP_SLOP = 10
 const NEAR_GOAL = 0.9
+const GYM_ID = 'gym'
 
 interface GridOrder {
   localDate: string
@@ -174,6 +176,40 @@ const HomePage = () => {
     onSettled: () => queryClient.invalidateQueries({ queryKey }),
   })
 
+  const gym = useMutation({
+    mutationFn: () => toggleGym({ data: { localDate } }),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey })
+      const previous = queryClient.getQueryData<Grid>(queryKey)
+
+      queryClient.setQueryData<Grid>(queryKey, (current) => {
+        if (!current) return current
+
+        // Today's session keeps the value it was logged at, so undoing it puts
+        // back exactly what it took.
+        if (current.gymLogged !== null) {
+          return {
+            ...current,
+            gymLogged: null,
+            total: current.total - current.gymLogged,
+          }
+        }
+
+        if (current.gymCalories === 0) return current
+
+        return {
+          ...current,
+          gymLogged: -current.gymCalories,
+          total: current.total - current.gymCalories,
+        }
+      })
+
+      return { previous }
+    },
+    onError: rollback,
+    onSettled: () => queryClient.invalidateQueries({ queryKey }),
+  })
+
   const addExtra = useMutation({
     mutationFn: (values: OneOffValues) =>
       addOneOff({ data: { ...values, localDate } }),
@@ -209,7 +245,7 @@ const HomePage = () => {
     return <GridSkeleton localDate={localDate} />
   }
 
-  const columns = columnsFor(data.foods.length + data.extras.length + 1)
+  const columns = columnsFor(data.foods.length + data.extras.length)
   const dense = columns > 2
 
   // Logged foods float up, but only on the first paint of a day. Re-sorting on
@@ -231,6 +267,11 @@ const HomePage = () => {
   const nearGoal = !overGoal && ratio >= NEAR_GOAL
 
   const goalTone = getGoalTone(overGoal, nearGoal)
+
+  // An already-logged session shows what it actually took off, not what the
+  // setting says today.
+  const gymLogged = data.gymLogged
+  const gymAmount = gymLogged === null ? data.gymCalories : -gymLogged
 
   const rank = new Map(orderRef.current.ids.map((id, index) => [id, index]))
   const orderedFoods = [...data.foods].sort(
@@ -278,6 +319,39 @@ const HomePage = () => {
         )}
       </header>
 
+      <div className="mt-3 flex shrink-0 gap-2">
+        <button
+          type="button"
+          aria-pressed={gymLogged !== null}
+          aria-label={
+            gymAmount > 0 ? `Gym session, ${gymAmount} calories off` : 'Gym'
+          }
+          disabled={gymAmount === 0}
+          onClick={() => {
+            buzz()
+            setStamped(GYM_ID)
+            gym.mutate(undefined)
+          }}
+          onAnimationEnd={(event) => {
+            if (event.target === event.currentTarget) setStamped(null)
+          }}
+          className={`chip flex-1 text-base ${
+            gymLogged === null ? '' : 'chip-on'
+          } ${stamped === GYM_ID ? 'animate-stamp' : ''}`}
+        >
+          🏋️
+        </button>
+
+        <button
+          type="button"
+          aria-label="Log a one-off food"
+          onClick={() => setAdding(true)}
+          className="chip flex-1 text-lg"
+        >
+          +
+        </button>
+      </div>
+
       {data.foods.length === 0 && data.extras.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-5">
           <p className="text-muted text-center text-sm">
@@ -289,13 +363,6 @@ const HomePage = () => {
           >
             Add your first food
           </Link>
-          <button
-            type="button"
-            onClick={() => setAdding(true)}
-            className="nav-link"
-          >
-            Or log something one-off
-          </button>
         </div>
       ) : (
         <div className="no-scrollbar flex min-h-0 flex-1 overflow-x-hidden overflow-y-auto py-4">
@@ -322,7 +389,7 @@ const HomePage = () => {
                   if (event.target === event.currentTarget) setStamped(null)
                 }}
                 style={{ borderRadius: 'var(--radius-card)' }}
-                className={`ease-punch bg-paper/8 text-paper/85 border-paper/30 flex aspect-2/3 flex-col items-center justify-between overflow-hidden border border-dashed p-2.5 transition-[background-color,border-color] duration-200 active:scale-[0.95] ${
+                className={`ease-punch bg-paper/8 text-paper/85 border-paper/30 flex aspect-3/4 flex-col items-center justify-between overflow-hidden border border-dashed p-2.5 transition-[background-color,border-color] duration-200 active:scale-[0.95] ${
                   stamped === extra.id ? 'animate-stamp' : ''
                 }`}
               >
@@ -359,7 +426,7 @@ const HomePage = () => {
                     if (event.target === event.currentTarget) setStamped(null)
                   }}
                   style={{ borderRadius: 'var(--radius-card)' }}
-                  className={`ease-punch relative flex aspect-2/3 overflow-hidden transition-[background-color,color,box-shadow] duration-200 has-[[data-tap]:active]:scale-[0.95] ${
+                  className={`ease-punch relative flex aspect-3/4 overflow-hidden transition-[background-color,color,box-shadow] duration-200 has-[[data-tap]:active]:scale-[0.95] ${
                     stamped === food.id ? 'animate-stamp' : ''
                   } ${
                     logged
@@ -444,16 +511,6 @@ const HomePage = () => {
                 </div>
               )
             })}
-
-            <button
-              type="button"
-              aria-label="Add a one-off food"
-              onClick={() => setAdding(true)}
-              style={{ borderRadius: 'var(--radius-card)' }}
-              className="ease-punch text-paper/35 border-paper/18 hover:text-paper/60 grid aspect-2/3 place-items-center border border-dashed transition-colors duration-200 active:scale-[0.95]"
-            >
-              <span className="text-2xl leading-none">+</span>
-            </button>
           </div>
         </div>
       )}
@@ -496,12 +553,17 @@ const GridSkeleton = ({ localDate }: Readonly<{ localDate: string }>) => {
         <div className="rule mt-2" />
       </header>
 
+      <div className="mt-3 flex shrink-0 animate-pulse gap-2">
+        <div className="bg-raised/60 h-10 flex-1 rounded-(--radius-control)" />
+        <div className="bg-raised/60 h-10 flex-1 rounded-(--radius-control)" />
+      </div>
+
       <div className="flex min-h-0 flex-1 overflow-hidden py-4">
         <div className="m-auto grid w-full animate-pulse grid-cols-3 gap-2.5">
           {Array.from({ length: 9 }, (_, index) => (
             <div
               key={index}
-              className="bg-raised/60 aspect-2/3 rounded-(--radius-card)"
+              className="bg-raised/60 aspect-3/4 rounded-(--radius-card)"
             />
           ))}
         </div>
